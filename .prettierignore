@@ -1,0 +1,10 @@
+pnpm-lock.yaml
+uv.lock
+**/.next/
+**/node_modules/
+**/coverage/
+**/.turbo/
+.venv/
+services/algo-api/openapi.json
+PROJECT_INDEX.md
+*.md

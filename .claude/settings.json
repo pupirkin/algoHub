@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(uv *)",
+      "Bash(just *)",
+      "Bash(pytest *)",
+      "Bash(npx playwright *)",
+      "Bash(docker compose *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git switch *)",
+      "Bash(git checkout -b *)",
+      "Bash(git push -u origin feat/*)",
+      "Bash(git push -u origin chore/*)",
+      "Bash(git push -u origin adr/*)",
+      "Bash(git push -u origin wip/*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr checks*)",
+      "Bash(actionlint*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push origin main*)",
+      "Bash(git push origin HEAD:main*)",
+      "Bash(git reset --hard*)",
+      "Bash(git rebase *)",
+      "Bash(git filter-branch*)",
+      "Bash(rm -rf *)",
+      "Bash(docker system prune*)",
+      "Bash(docker volume rm*)",
+      "Read(./.env)",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.*.local)",
+      "Bash(git push *--force*)",
+      "Bash(git push * -f*)",
+      "Bash(git push *:main*)",
+      "Bash(git push * main)",
+      "Bash(git push *--delete*)",
+      "Read(**/.env.production)",
+      "Read(**/.env.development)",
+      "Read(**/.env.test)",
+      "Read(**/.env.staging)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR}\"/tools/hooks/fast-check.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PROJECT_DIR}\"/tools/hooks/remind-checkpoint.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

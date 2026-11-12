@@ -1,0 +1,20 @@
+[project]
+name = "algohub-algo-api"
+version = "0.0.0"
+description = "AlgoHub API composition root: mounts product routers under /api/v1/<pid>."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "algohub-shared-kernel",
+    "fastapi==0.162.5",
+    "uvicorn[standard]==0.54.0",
+]
+
+[tool.uv.sources]
+algohub-shared-kernel = { workspace = true }
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "algo_api"

@@ -1,0 +1,95 @@
+[project]
+name = "algohub"
+version = "0.0.0"
+description = "AlgoHub monorepo root (uv workspace). Not a distributable package."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "algohub-shared-kernel",
+    "algohub-algorithms",
+    "algohub-algo-api",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.2.0",
+    "pytest-cov==7.1.0",
+    "hypothesis==6.170.15",
+    "httpx2==2.16.0",
+    "ruff==0.17.4",
+    "mypy==2.4.1",
+    "import-linter==2.16",
+    "pre-commit==4.7.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["services/*", "python/*", "products/*/api"]
+
+[tool.uv.sources]
+algohub-shared-kernel = { workspace = true }
+algohub-algorithms = { workspace = true }
+algohub-algo-api = { workspace = true }
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["**/migrations/versions/**"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "RUF", "S", "PT", "TID", "ASYNC", "DTZ", "PL"]
+ignore = ["PLR2004", "PLR0913"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "PLR2004", "S105", "S106"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["shared_kernel", "algorithms", "algo_api", "algohub_*"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+# ---------------------------------------------------------------- mypy
+# Run per workspace member (`just typecheck`): each member has its own tests/conftest.py.
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+exclude = ['/migrations/versions/']
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib", "-m", "not integration"]
+testpaths = ["python", "services", "products"]
+markers = [
+    "integration: needs a real Postgres (run `just up` then `just test-int`)",
+]
+filterwarnings = ["error"]
+
+# ---------------------------------------------------------------- import-linter
+# Boundaries from ARCHITECTURE_PLAN §4. Never weaken a contract; fix the design.
+# Product packages (`algohub_pXX`) are added to root_packages and to an `independence` contract by the
+# product's first API slice (manual until the Phase 2.5 generator does it).
+[tool.importlinter]
+root_packages = ["shared_kernel", "algorithms", "algo_api"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "algorithms are pure: no DB, HTTP, settings or platform code"
+type = "forbidden"
+source_modules = ["algorithms"]
+forbidden_modules = ["shared_kernel", "algo_api", "sqlalchemy", "fastapi", "starlette", "httpx", "httpx2", "pydantic_settings", "psycopg", "structlog"]
+
+[[tool.importlinter.contracts]]
+name = "shared_kernel does not know about services or products"
+type = "forbidden"
+source_modules = ["shared_kernel"]
+forbidden_modules = ["algo_api", "algorithms"]

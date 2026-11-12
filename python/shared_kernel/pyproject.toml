@@ -1,0 +1,20 @@
+[project]
+name = "algohub-shared-kernel"
+version = "0.0.0"
+description = "Cross-cutting platform code: settings, logging, errors, health, db."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi==0.162.5",
+    "pydantic==2.14.3",
+    "pydantic-settings==2.16.2",
+    "structlog==26.1.0",
+    "sqlalchemy==2.1.8",
+    "psycopg[binary]==3.3.8",
+]
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "shared_kernel"
