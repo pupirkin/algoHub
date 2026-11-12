@@ -2,7 +2,7 @@
 
 - Updated: 2026-11-12
 - Phase: **0 «Scaffold» — done** (DEVOPS_AND_WORKFLOW.md §6). Next: **Phase 1 «Портал»**.
-- Branch: `chore/scaffold` (PR to `main`). Commit: see `git log -1`.
+- Branch: `chore/scaffold` (pushed; PR to `main` opened by the owner in the browser — gh is not authenticated). Commit: see `git log -1`.
 - Products: 32 in registry, all `NOT_STARTED`; `products/` is empty (expected for Phase 0).
 
 ## What exists
@@ -56,6 +56,10 @@ just verify       # lint + typecheck + test + next build
 | CI on GitHub | — | **NOT RUN locally**; result visible on the PR |
 
 ## Known gaps / assumptions
+
+- **`main` bootstrap (one-time, owner-approved exception to rule 10):** the GitHub repo was empty, so `main` = empty root
+  commit `ef0fab2 chore: initialize repository`, merged into `chore/scaffold` (no history rewrite). The project deny rule
+  blocked the agent from pushing it; the owner runs `git push origin main` once. Afterwards: enable branch protection on `main`.
 
 - Docker absent → Postgres, `/readyz`=ready and integration tests never ran on this machine (CI runs them).
 - `PROJECT_CATALOG.md` was not in the repo; product names/profiles/waves taken from ARCHITECTURE_PLAN §3. Taglines missing → Phase 1.
