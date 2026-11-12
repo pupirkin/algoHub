@@ -7,6 +7,20 @@ updates:
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
+    # Majors that are pinned on purpose (see docs/TOOLCHAIN.md); bump only via an ADR/explicit decision.
+    ignore:
+      - dependency-name: next # Next.js 15 is fixed by ADR (CLAUDE.md stack)
+        update-types: [version-update:semver-major]
+      - dependency-name: "@next/eslint-plugin-next" # must match next
+        update-types: [version-update:semver-major]
+      - dependency-name: typescript # typescript-eslint supports < 6.1
+        update-types: [version-update:semver-major]
+      - dependency-name: eslint # eslint-plugin-jsx-a11y supports ESLint <= 9
+        update-types: [version-update:semver-major]
+      - dependency-name: "@eslint/js" # must match eslint
+        update-types: [version-update:semver-major]
+      - dependency-name: "@types/node" # must match the Node runtime (24 LTS, .nvmrc)
+        update-types: [version-update:semver-major]
   - package-ecosystem: uv
     directory: /
     schedule:
