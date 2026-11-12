@@ -48,7 +48,7 @@ Python 3.12: fastapi 0.162.5 · starlette 1.10.0 · uvicorn 0.54.0 · pydantic 2
 sqlalchemy 2.1.8 · psycopg 3.3.8 · structlog 26.1.0 · pytest 9.2.0 · hypothesis 6.170.15 · ruff 0.17.4 ·
 mypy 2.4.1 · import-linter 2.16 · httpx2 2.16.0.
 
-GitHub Actions: checkout@v7 · setup-node@v7 · pnpm/action-setup@v6 · astral-sh/setup-uv@v10 · extractions/setup-just@v4.
+GitHub Actions: checkout@v7 · setup-node@v7 · pnpm/action-setup@v6 · astral-sh/setup-uv@v10.3.3 (pinned by SHA: the action has no moving major tag) · extractions/setup-just@v4.
 Hooks: pre-commit-hooks v6.0.0 · gitleaks v8.30.1.
 
 Отложено до фазы, где появляется потребность: alembic (первая миграция P15), playwright/@axe-core/playwright (e2e портала, Фаза 1),
