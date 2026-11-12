@@ -1,0 +1,128 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: "1"
+  UV_FROZEN: "1"
+
+jobs:
+  commit-hygiene:
+    name: commit hygiene
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: No agent/tool attribution in commit messages
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: tools/hooks/check-commit-msg.sh --range "$BASE_SHA..$HEAD_SHA"
+
+  static:
+    name: static (lint, typecheck, boundaries, secrets, workflows)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3 (no moving major tag)
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - uses: extractions/setup-just@v4
+      - name: Install
+        run: |
+          pnpm install --frozen-lockfile
+          uv sync --frozen
+      - name: Lint (ESLint+boundaries+jsx-a11y, Prettier, ruff, import-linter, index drift)
+        run: just lint
+      - name: Typecheck (tsc strict, mypy --strict)
+        run: just typecheck
+      - name: actionlint
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color
+      - name: gitleaks
+        run: |
+          curl -fsSL -o gitleaks.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          tar -xzf gitleaks.tgz gitleaks
+          ./gitleaks git --redact --no-banner .
+
+  test-ts:
+    name: test (TypeScript)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Unit + property + component (Vitest, fast-check, axe-core)
+        run: pnpm test
+      - name: Build portal-web
+        run: pnpm build
+
+  test-py:
+    name: test (Python, Postgres 16)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: algohub
+          POSTGRES_PASSWORD: ci-only-not-a-secret
+          POSTGRES_DB: algohub_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U algohub -d algohub_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      ALGOHUB_DATABASE_URL: postgresql+psycopg://algohub:ci-only-not-a-secret@127.0.0.1:5432/algohub_test
+      ALGOHUB_TEST_DATABASE_URL: postgresql+psycopg://algohub:ci-only-not-a-secret@127.0.0.1:5432/algohub_test
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3 (no moving major tag)
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Unit + property (pytest, hypothesis)
+        run: uv run pytest
+      - name: Contract snapshot is current
+        run: uv run python -m algo_api.export_openapi --check
+      - name: Apply compose init SQL (service containers cannot mount it)
+        run: |
+          uv run python - <<'PY'
+          import os, pathlib
+          from sqlalchemy import create_engine, text
+          sql = pathlib.Path("infra/compose/init/01-schemas.sql").read_text()
+          with create_engine(os.environ["ALGOHUB_TEST_DATABASE_URL"]).begin() as conn:
+              conn.execute(text(sql))
+          PY
+      - name: Integration (real Postgres)
+        run: uv run pytest -m integration

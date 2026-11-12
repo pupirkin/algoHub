@@ -1,0 +1,22 @@
+{
+  "name": "@algohub/tool-index-sync",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@algohub/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@algohub/config": "workspace:*",
+    "@types/node": "24.19.2",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "extends": "@algohub/config/tsconfig.nextjs.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "esModuleInterop": true
+  },
+  "include": ["next-env.d.ts", "app", "src", "next.config.ts", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,13 @@
+[project]
+name = "algohub-algorithms"
+version = "0.0.0"
+description = "Pure, reusable algorithm kernels (no DB, HTTP or settings). Domains appear with products."
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "algorithms"
