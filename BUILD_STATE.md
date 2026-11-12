@@ -2,7 +2,7 @@
 
 - Updated: 2026-11-12
 - Phase: **0 «Scaffold» — done** (DEVOPS_AND_WORKFLOW.md §6). Next: **Phase 1 «Портал»**.
-- Branch: `chore/scaffold` (pushed; PR to `main` opened by the owner in the browser — gh is not authenticated). Commit: see `git log -1`.
+- Branch: `chore/scaffold` → PR #6 to `main` (opened by the owner; gh is not authenticated). Merge = squash. Commit: see `git log -1`.
 - Products: 32 in registry, all `NOT_STARTED`; `products/` is empty (expected for Phase 0).
 
 ## What exists
@@ -53,7 +53,7 @@ just verify       # lint + typecheck + test + next build
 | tools | `just gen P17 fairteams --profile CLIENT --dry-run`; `just dod P15` | ✅ plans 8 files; dod prints table, RED (no product dir) exit 1 — expected |
 | infra | `just up`, `just test-int` | **NOT RUN: Docker is not installed** (owner chose to continue without it) |
 | e2e | `just e2e` | **NOT RUN: no Playwright suite yet (Phase 1)** |
-| CI on GitHub | — | **NOT RUN locally**; result visible on the PR |
+| CI on GitHub | PR #6, commit `0537b16` | ✅ commit hygiene, static, test-ts (+ build), test-py (+ **integration vs real Postgres 16**) — all success. First run failed: `astral-sh/setup-uv@v10` tag does not exist → pinned by SHA (v10.3.3) |
 
 ## Known gaps / assumptions
 
@@ -61,7 +61,7 @@ just verify       # lint + typecheck + test + next build
   commit `ef0fab2 chore: initialize repository`, merged into `chore/scaffold` (no history rewrite). The project deny rule
   blocked the agent from pushing it; the owner runs `git push origin main` once. Afterwards: enable branch protection on `main`.
 
-- Docker absent → Postgres, `/readyz`=ready and integration tests never ran on this machine (CI runs them).
+- Docker absent → Postgres and `/readyz`=ready never ran on this machine; integration tests are green in CI only.
 - `PROJECT_CATALOG.md` was not in the repo; product names/profiles/waves taken from ARCHITECTURE_PLAN §3. Taglines missing → Phase 1.
 - `registry.ts` created in Phase 0 (data only) because `PROJECT_INDEX.md` must be generated from it.
 - Not yet present (by plan): `@algohub/api-client`, alembic, worker, Dockerfiles, `compose.ci.yml`, umami, next-intl, security headers, Playwright, knip, dependency-review.
