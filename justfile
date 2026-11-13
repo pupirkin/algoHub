@@ -113,18 +113,46 @@ test-int: _require-docker
     {{ compose }} --profile test stop postgres-test
     exit $status
 
-# Playwright e2e. No id: portal smoke (desktop + mobile, axe, headers) against a production build served by
-# `next start`; the API is intercepted in-browser. Product happy paths against compose arrive with P15.
+# Playwright e2e. No id: portal smoke (desktop + mobile, axe, headers) against `next start`, API intercepted in-browser.
+# With an id (`just e2e P15`): the product happy path against docker compose (compose.ci.yml) — the MVP_READY gate.
 e2e id="":
     #!/usr/bin/env bash
     set -euo pipefail
-    if [ -n "{{ id }}" ]; then
-        echo "NOT RUN: product e2e for {{ id }} needs compose.ci.yml + Dockerfiles (Phase 2, P15)" >&2
-        exit 1
-    fi
     # E2E_BROWSER_CHANNEL=chrome uses the installed Google Chrome and skips the Chromium download.
     if [ -z "${E2E_BROWSER_CHANNEL:-}" ]; then pnpm --filter @algohub/portal-web exec playwright install chromium; fi
-    pnpm --filter @algohub/portal-web e2e
+    if [ -z "{{ id }}" ]; then
+        pnpm --filter @algohub/portal-web e2e
+        exit 0
+    fi
+    pid="$(echo "{{ id }}" | tr '[:upper:]' '[:lower:]')"
+    if [ ! -f "apps/portal-web/e2e-products/$pid.spec.ts" ]; then echo "NOT RUN: no e2e-products/$pid.spec.ts" >&2; exit 1; fi
+    command -v docker >/dev/null 2>&1 || { echo "NOT RUN: docker is not installed (see docs/TOOLCHAIN.md)" >&2; exit 2; }
+    docker info >/dev/null 2>&1 || { echo "NOT RUN: docker daemon is not running" >&2; exit 2; }
+    ci="docker compose -f infra/compose/compose.ci.yml"
+    trap '$ci logs --no-color > e2e-compose.log 2>&1 || true; $ci down -v' EXIT
+    $ci up -d --build --wait
+    E2E_BASE_URL=http://localhost:3000 pnpm --filter @algohub/portal-web exec \
+        playwright test -c playwright.products.config.ts "e2e-products/$pid.spec.ts"
+
+# Local smoke of a product's e2e WITHOUT Docker: in-memory API (algo_api.preview) + `next start` with the preview
+# flag. Exercises the real UI and API logic but not Postgres or the images — it does NOT count for `just dod`.
+e2e-preview id:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    pid="$(echo "{{ id }}" | tr '[:upper:]' '[:lower:]')"
+    if [ -z "${E2E_BROWSER_CHANNEL:-}" ]; then pnpm --filter @algohub/portal-web exec playwright install chromium; fi
+    NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 pnpm --filter @algohub/portal-web build
+    uv run uvicorn algo_api.preview:create_preview_app --factory --host 127.0.0.1 --port 8000 --log-level warning &
+    api=$!
+    (cd apps/portal-web && ALGOHUB_FLAGS="preview:{{ id }}" exec pnpm exec next start --port 3000 > /dev/null) &
+    web=$!
+    trap 'pkill -P $api 2>/dev/null; kill $api 2>/dev/null; pkill -P $web 2>/dev/null; kill $web 2>/dev/null; true' EXIT
+    for _ in $(seq 1 60); do
+        curl -sf http://127.0.0.1:8000/healthz >/dev/null && curl -sf http://127.0.0.1:3000/api/health >/dev/null && break
+        sleep 1
+    done
+    E2E_BASE_URL=http://localhost:3000 pnpm --filter @algohub/portal-web exec \
+        playwright test -c playwright.products.config.ts "e2e-products/$pid.spec.ts"
 
 # Definition of Done report for a product: `just dod P15`
 dod id:

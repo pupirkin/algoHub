@@ -153,3 +153,31 @@ jobs:
             apps/portal-web/playwright-report
             apps/portal-web/test-results
           retention-days: 7
+
+  e2e-p15:
+    name: e2e P15 (compose, Playwright + axe)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: extractions/setup-just@v4
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium for Playwright
+        run: pnpm --filter @algohub/portal-web exec playwright install --with-deps chromium
+      - name: P15 happy path against docker compose (postgres, migrations, algo-api, portal-web images)
+        run: just e2e P15
+      - name: Upload Playwright report and compose logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-p15
+          path: |
+            apps/portal-web/playwright-report-products
+            apps/portal-web/test-results
+            e2e-compose.log
+          retention-days: 7

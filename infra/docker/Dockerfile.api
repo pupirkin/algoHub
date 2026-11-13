@@ -1,0 +1,39 @@
+# algo-api image (DEVOPS_AND_WORKFLOW §1): uv sync --frozen in a builder, slim non-root runtime.
+# The same image runs migrations (`migrate` service in compose.ci.yml) and, from P31 on, the worker.
+# Build from the repo root: docker build -f infra/docker/Dockerfile.api .
+
+FROM ghcr.io/astral-sh/uv:0.13.7 AS uv
+
+FROM python:3.12-slim AS builder
+COPY --from=uv /uv /usr/local/bin/uv
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never UV_FROZEN=1
+WORKDIR /app
+# Dependency layer first (cached until the lockfile or a member's pyproject changes).
+COPY pyproject.toml uv.lock ./
+COPY python/shared_kernel/pyproject.toml python/shared_kernel/pyproject.toml
+COPY python/algorithms/pyproject.toml python/algorithms/pyproject.toml
+COPY services/algo-api/pyproject.toml services/algo-api/pyproject.toml
+COPY products/p15-nomoredebate/api/pyproject.toml products/p15-nomoredebate/api/pyproject.toml
+RUN uv sync --no-dev --no-install-workspace --package algohub-algo-api
+# Source layer.
+COPY python python
+COPY services/algo-api services/algo-api
+COPY products products
+RUN rm -rf products/*/web products/*/docs products/*/scenarios \
+    && uv sync --no-dev --no-editable --package algohub-algo-api
+
+FROM python:3.12-slim AS runtime
+RUN useradd --system --uid 10001 --no-create-home app
+WORKDIR /app
+COPY --from=builder /app/.venv /app/.venv
+# Alembic configs + migrations (platform, then every product) for the `migrate` command.
+COPY --from=builder /app/services/algo-api/alembic.ini services/algo-api/alembic.ini
+COPY --from=builder /app/services/algo-api/migrations services/algo-api/migrations
+COPY --from=builder /app/products products
+COPY infra/docker/migrate.sh /usr/local/bin/migrate
+ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+USER app
+EXPOSE 8000
+HEALTHCHECK --interval=5s --timeout=3s --retries=20 \
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+CMD ["uvicorn", "algo_api.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

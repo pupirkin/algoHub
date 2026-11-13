@@ -21,6 +21,7 @@ coverage/
 next-env.d.ts
 playwright-report/
 test-results/
+playwright-report-products/
 
 # env (never commit real values; .env.example is the template)
 .env
@@ -35,3 +36,4 @@ test-results/
 
 # claude code local overrides
 .claude/settings.local.json
+e2e-compose.log
