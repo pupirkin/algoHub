@@ -16,8 +16,33 @@ describe("joinWaitlist", () => {
     expect(JSON.parse(String(init?.body))).toEqual(body);
   });
 
+  const envelope422 = (loc: string[]) =>
+    vi.fn<typeof fetch>(
+      async () =>
+        new Response(
+          JSON.stringify({
+            error: { code: "validation_error", message: "x", request_id: "r", details: { fields: [{ loc }] } },
+          }),
+          { status: 422, headers: { "content-type": "application/json" } },
+        ),
+    );
+
+  it("maps a 422 about the email to invalid", async () => {
+    expect(await joinWaitlist("http://api.test", body, envelope422(["body", "email"]))).toEqual({
+      ok: false,
+      error: "invalid",
+    });
+  });
+
+  it("maps a 422 about anything else (e.g. product id) to unavailable, not to a typo", async () => {
+    expect(await joinWaitlist("http://api.test", body, envelope422(["body", "product_id"]))).toEqual({
+      ok: false,
+      error: "unavailable",
+    });
+    expect(await joinWaitlist("http://api.test", body, respond(422))).toEqual({ ok: false, error: "unavailable" });
+  });
+
   it.each([
-    [422, "invalid"],
     [429, "rateLimited"],
     [500, "unavailable"],
     [503, "unavailable"],

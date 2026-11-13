@@ -27,18 +27,21 @@ up: _require-docker
 down: _require-docker
     {{ compose }} --profile test down
 
-# Apply Alembic migrations of every product that has them (none yet in Phase 0)
+# Apply Alembic migrations: platform schema first (services/algo-api), then every product that has them
 migrate:
     #!/usr/bin/env bash
     set -euo pipefail
     shopt -s nullglob
-    found=0
+    echo "migrating platform (services/algo-api)"
+    uv run alembic -c services/algo-api/alembic.ini upgrade head
     for ini in products/*/api/alembic.ini; do
-        found=1
         echo "migrating ${ini%/alembic.ini}"
         uv run alembic -c "$ini" upgrade head
     done
-    if [ "$found" = 0 ]; then echo "migrate: no product migrations yet"; fi
+
+# Delete waitlist sign-ups older than the retention period (365 days); needs a database
+purge-waitlist:
+    uv run python -m algo_api.platform.purge_waitlist
 
 # Run portal-web (Next.js, :3000) and algo-api (uvicorn --reload, :8000) together; Ctrl-C stops both
 dev:
@@ -94,10 +97,18 @@ test-int: _require-docker
     {{ compose }} --profile test stop postgres-test
     exit $status
 
-# Playwright e2e against compose (arrives with the portal smoke test in Phase 1)
+# Playwright e2e. No id: portal smoke (desktop + mobile, axe, headers) against a production build served by
+# `next start`; the API is intercepted in-browser. Product happy paths against compose arrive with P15.
 e2e id="":
-    @echo "NOT RUN: e2e suite does not exist yet (Phase 1 adds portal smoke; products add happy paths)" >&2
-    @exit 1
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -n "{{ id }}" ]; then
+        echo "NOT RUN: product e2e for {{ id }} needs compose.ci.yml + Dockerfiles (Phase 2, P15)" >&2
+        exit 1
+    fi
+    # E2E_BROWSER_CHANNEL=chrome uses the installed Google Chrome and skips the Chromium download.
+    if [ -z "${E2E_BROWSER_CHANNEL:-}" ]; then pnpm --filter @algohub/portal-web exec playwright install chromium; fi
+    pnpm --filter @algohub/portal-web e2e
 
 # Definition of Done report for a product: `just dod P15`
 dod id:

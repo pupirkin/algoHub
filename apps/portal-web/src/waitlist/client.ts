@@ -18,6 +18,16 @@ export const MAX_EMAIL_LENGTH = 254;
 
 export const looksLikeEmail = (s: string): boolean => s.length <= MAX_EMAIL_LENGTH && EMAIL_RE.test(s);
 
+/** A 422 blames the email only if the API says so; anything else (e.g. unknown product) is not the user's typo. */
+async function isEmailValidationError(res: Response): Promise<boolean> {
+  try {
+    const body = (await res.json()) as { error?: { details?: { fields?: { loc?: string[] }[] } } };
+    return (body.error?.details?.fields ?? []).some((f) => f.loc?.includes("email") === true);
+  } catch {
+    return false;
+  }
+}
+
 export async function joinWaitlist(
   baseUrl: string,
   body: WaitlistRequest,
@@ -36,7 +46,7 @@ export async function joinWaitlist(
     return err("unavailable");
   }
   if (res.status === 202) return ok(undefined);
-  if (res.status === 422) return err("invalid");
+  if (res.status === 422) return err((await isEmailValidationError(res)) ? "invalid" : "unavailable");
   if (res.status === 429) return err("rateLimited");
   return err("unavailable");
 }

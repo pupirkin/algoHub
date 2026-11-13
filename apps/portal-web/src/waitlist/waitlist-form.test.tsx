@@ -56,14 +56,33 @@ describe("WaitlistForm", () => {
     expect(screen.getByRole("alert").textContent).toMatch(text);
   });
 
-  it("disables the button while submitting", async () => {
+  it("marks the button busy while submitting, ignores double submits, then focuses the result", async () => {
     let resolve: (r: Result<void, WaitlistError>) => void = () => undefined;
-    const { input, button } = setup(() => new Promise((r) => (resolve = r)));
+    const submit = vi.fn(() => new Promise<Result<void, WaitlistError>>((r) => (resolve = r)));
+    const { input, button } = setup(submit);
     await submitWith(input, button, "user@example.test");
-    expect(button).toHaveProperty("disabled", true);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
     expect(button.textContent).toBe("Отправляем…");
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    expect(submit).toHaveBeenCalledTimes(1);
     await act(async () => resolve(ok(undefined)));
-    expect(screen.getByRole("status")).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole("status"));
+  });
+
+  it("returns focus to the input after an error and re-announces a repeated error", async () => {
+    const { input, button } = setup(async () => err("unavailable"));
+    await submitWith(input, button, "user@example.test");
+    const first = screen.getByRole("alert");
+    expect(document.activeElement).toBe(input);
+    await submitWith(input, button, "user@example.test");
+    expect(screen.getByRole("alert")).not.toBe(first);
+  });
+
+  it("the email input has no name, so a pre-JS native submit cannot leak it into the URL", () => {
+    const { input } = setup(async () => ok(undefined));
+    expect(input.hasAttribute("name")).toBe(false);
   });
 
   it("has no axe violations in the idle and error states", async () => {

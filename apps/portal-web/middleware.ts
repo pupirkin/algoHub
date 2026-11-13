@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { apiBaseUrl } from "./src/config/public";
 import { buildCsp, createNonce, originOf } from "./src/security/headers";
 
 /**
@@ -7,7 +8,7 @@ import { buildCsp, createNonce, originOf } from "./src/security/headers";
  */
 export function middleware(request: NextRequest) {
   const nonce = createNonce();
-  const apiOrigin = originOf(process.env.NEXT_PUBLIC_API_BASE_URL);
+  const apiOrigin = originOf(apiBaseUrl());
   const csp = buildCsp({
     nonce,
     connectOrigins: apiOrigin === null ? [] : [apiOrigin],
