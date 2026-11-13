@@ -20,7 +20,7 @@ Products: 32.
 | P12 | LifeOptimizer | Подберёт дела под ваше свободное окно | lifeoptimizer | DATA | NOT_STARTED | — | `products/p12-lifeoptimizer` |
 | P13 | WalkMatch | Компания для прогулки по пути и по времени | walkmatch | ROOM | NOT_STARTED | — | `products/p13-walkmatch` |
 | P14 | FlightReady | Когда выезжать в аэропорт без лишнего ожидания | flightready | DATA | NOT_STARTED | — | `products/p14-flightready` |
-| P15 | NoMoreDebate | Голосование, которое заканчивает спор за минуты | nomoredebate | ROOM | NOT_STARTED | 1 | `products/p15-nomoredebate` |
+| P15 | NoMoreDebate | Голосование, которое заканчивает спор за минуты | nomoredebate | ROOM | IN_PROGRESS | 1 | `products/p15-nomoredebate` |
 | P16 | PerfectWindow | Лучшее время для дел по погоде и календарю | perfectwindow | DATA | NOT_STARTED | — | `products/p16-perfectwindow` |
 | P17 | FairTeams | Равные по силе команды для любительской игры | fairteams | CLIENT | NOT_STARTED | 1.5 | `products/p17-fairteams` |
 | P18 | PriceDNA | Справедливая цена подержанной вещи | pricedna | DATA | NOT_STARTED | 3 | `products/p18-pricedna` |
@@ -39,4 +39,4 @@ Products: 32.
 | P31 | ShiftFair | Справедливый график смен за минуты | shiftfair | SOLVER | NOT_STARTED | 1 | `products/p31-shiftfair` |
 | P32 | AppointmentRescue | Отменённая запись быстро находит нового клиента | appointmentrescue | SOLVER | NOT_STARTED | 2 | `products/p32-appointmentrescue` |
 
-Status summary: NOT_STARTED: 32.
+Status summary: NOT_STARTED: 31, IN_PROGRESS: 1.

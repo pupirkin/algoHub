@@ -60,6 +60,15 @@ dev:
     pnpm dev &
     wait
 
+# Local preview without Docker: algo-api with P15 on an IN-MEMORY store (:8000) + portal with ALGOHUB_FLAGS=preview:P15
+preview:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    trap 'trap - EXIT INT TERM; kill 0' EXIT INT TERM
+    uv run uvicorn algo_api.preview:create_preview_app --factory --host 127.0.0.1 --port 8000 &
+    ALGOHUB_FLAGS=preview:P15 pnpm dev &
+    wait
+
 # Static checks: ESLint (+boundaries, +jsx-a11y), Prettier, ruff, import-linter, registry/index drift
 lint:
     pnpm lint
@@ -129,9 +138,10 @@ gen +args:
 index:
     pnpm --silent index:sync
 
-# Regenerate the committed OpenAPI snapshot services/algo-api/openapi.json
+# Regenerate the committed OpenAPI snapshot services/algo-api/openapi.json and @algohub/api-client types
 openapi:
     uv run python -m algo_api.export_openapi
+    pnpm --filter @algohub/api-client --silent generate
 
 # Everything CI runs without Docker: lint + typecheck + unit + portal production build
 verify: lint typecheck test

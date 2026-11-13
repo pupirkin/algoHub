@@ -8,3 +8,5 @@ uv.lock
 services/algo-api/openapi.json
 PROJECT_INDEX.md
 *.md
+# Generated from services/algo-api/openapi.json (just openapi)
+packages/api-client/src/schema.gen.ts

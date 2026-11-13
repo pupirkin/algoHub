@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "@algohub/ui/styles.css";
+/* Product web packages render inside the portal: let Tailwind see their class names (a glob here is not picked up). */
+@source "../../../products";
 
 body {
   font-family:

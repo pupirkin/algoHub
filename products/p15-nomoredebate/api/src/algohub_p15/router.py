@@ -104,6 +104,7 @@ def _result_out(room: RoomRecord, res: ResultRecord) -> ResultOut:
     return ResultOut(
         **payload.model_dump(),
         room_id=room.id,
+        question=room.question,
         method=res.method,  # type: ignore[arg-type]
         computed_at=res.computed_at,
         options=[OptionOut(id=i, label=label) for i, label in enumerate(room.options)],

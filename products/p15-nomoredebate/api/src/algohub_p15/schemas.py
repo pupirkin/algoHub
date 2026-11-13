@@ -217,6 +217,7 @@ class ResultPayload(BaseModel):
 
 class ResultOut(ResultPayload):
     room_id: UUID
+    question: str
     method: Method
     computed_at: datetime
     options: list[OptionOut]

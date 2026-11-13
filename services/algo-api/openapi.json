@@ -619,6 +619,10 @@
           "provenance": {
             "$ref": "#/components/schemas/Provenance"
           },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
           "reasons": {
             "items": {
               "$ref": "#/components/schemas/ReasonOut"
@@ -690,6 +694,7 @@
           "regrets",
           "reasons",
           "room_id",
+          "question",
           "method",
           "computed_at",
           "options",
