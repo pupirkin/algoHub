@@ -7,6 +7,6 @@
     },
     "esModuleInterop": true
   },
-  "include": ["next-env.d.ts", "app", "src", "next.config.ts", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "app", "src", "next.config.ts", "middleware.ts", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }

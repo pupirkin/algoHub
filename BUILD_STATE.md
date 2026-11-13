@@ -1,8 +1,10 @@
 # BUILD_STATE
 
-- Updated: 2026-11-12
-- Phase: **0 «Scaffold» — done** (DEVOPS_AND_WORKFLOW.md §6). Next: **Phase 1 «Портал»**.
-- Branch: `chore/scaffold` → PR #6 to `main` (opened by the owner; gh is not authenticated). Merge = squash. Commit: see `git log -1`.
+- Updated: 2026-11-13
+- Phase: **1 «Портал» — IN PROGRESS** on branch `feat/portal-catalog` (from `main` @ `e13be36`, PR #6 squash-merged).
+- Checkpoint 1 (2026-11-13): registry with tagline/purpose/core/tags (from PROJECT_CATALOG.md), catalog + client
+  search, landing `/p/<slug>` with waitlist form (API client only), next-intl RU, security headers (CSP nonce).
+  Pending in this phase: waitlist API + migration, Playwright smoke + axe, `just e2e`, CI e2e job, handoff.
 - Products: 32 in registry, all `NOT_STARTED`; `products/` is empty (expected for Phase 0).
 
 ## What exists

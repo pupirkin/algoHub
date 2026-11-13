@@ -9,12 +9,12 @@ export function renderIndex(products: readonly ProductEntry[]): string {
     "",
     `Products: ${products.length}.`,
     "",
-    "| ID | Product | Slug | Profile | Status | Wave | Directory |",
-    "|---|---|---|---|---|---|---|",
+    "| ID | Product | Tagline | Slug | Profile | Status | Wave | Directory |",
+    "|---|---|---|---|---|---|---|---|",
   ];
   const rows = products.map((p) => {
     const dir = `products/${p.id.toLowerCase()}-${p.slug}`;
-    return `| ${p.id} | ${p.title} | ${p.slug} | ${p.profiles.join("+")} | ${p.status} | ${p.wave ?? "—"} | \`${dir}\` |`;
+    return `| ${p.id} | ${p.title} | ${p.tagline.replaceAll("|", "\\|")} | ${p.slug} | ${p.profiles.join("+")} | ${p.status} | ${p.wave ?? "—"} | \`${dir}\` |`;
   });
   const counts = new Map<string, number>();
   for (const p of products) counts.set(p.status, (counts.get(p.status) ?? 0) + 1);

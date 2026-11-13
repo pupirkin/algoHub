@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+import { STATIC_SECURITY_HEADERS } from "./src/security/headers";
+
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const config: NextConfig = {
   // Workspace packages are shipped as TypeScript source (ARCHITECTURE_PLAN §10).
@@ -6,7 +10,10 @@ const config: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
-  // Security headers (CSP with nonce, HSTS, …) are Phase 1 «Портал».
+  // Static security headers for every route; the per-request CSP (nonce) is set in middleware.ts.
+  async headers() {
+    return [{ source: "/:path*", headers: [...STATIC_SECURITY_HEADERS] }];
+  },
 };
 
-export default config;
+export default withNextIntl(config);
