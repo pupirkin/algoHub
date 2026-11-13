@@ -36,6 +36,15 @@ just verify       # lint + typecheck + test + next build — всё, что CI �
 создаёт только schema `platform`; schema продукта создаёт его собственная первая Alembic-миграция (ADR-0005), а
 `services/algo-api/src/algo_api/products.py` лишь называет её.
 
+Фаза 1 (2026-11-13): `just migrate` сначала применяет платформенные миграции (`services/algo-api/alembic.ini`,
+schema `platform`, version table `platform.alembic_version`), затем миграции продуктов. `just e2e` (без ID) —
+портальный smoke: Playwright против `next build && next start` на :3100, проекты desktop и mobile (375×812), axe
+serious/critical, проверка security headers; API в браузере перехватывается (`page.route`) — это помечено в тестах.
+Первый запуск скачивает Chromium (`playwright install chromium`). `just e2e P15` честно печатает NOT RUN, пока нет
+`compose.ci.yml` и Dockerfile'ов (Фаза 2). CI: job `e2e-smoke`. `E2E_BROWSER_CHANNEL=chrome just e2e` — то же на
+установленном Google Chrome без скачивания Chromium. `just purge-waitlist` — удаляет записи `platform.waitlist`
+старше 365 дней (нужна БД; до появления worker в P31 запускается вручную/cron).
+
 **Docker Compose** (`infra/compose/docker-compose.yml`): `postgres:16` (с init-скриптом, создающим schemas `platform`, и по одной на продукт — из списка в `services/algo-api/products.py`), `umami` (аналитика, опционально, профиль `analytics`), `algo-api`, `algo-worker`, `portal-web` (в dev фронт обычно запускается нативно ради HMR; в compose — для e2e). `compose.ci.yml` — те же сервисы с фиксированными портами и `healthcheck`, на которые ждёт Playwright.
 
 **Образы.** `Dockerfile.api` многоэтапный: `uv sync --frozen` в builder, слой OR-Tools отдельно (кэш), runtime на `python:3.12-slim`, non-root user, `HEALTHCHECK /healthz`. `Dockerfile.web` — `next build` standalone output. Оба образа — один и тот же для dev/CI/будущего прод, различие только в env.

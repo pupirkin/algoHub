@@ -8,7 +8,7 @@ describe("renderIndex", () => {
     expect(md).toBe(renderIndex(products));
     expect(md.split("\n").filter((l) => /^\| P\d{2} \|/.test(l))).toHaveLength(32);
     expect(md).toContain(
-      "| P15 | NoMoreDebate | nomoredebate | ROOM | NOT_STARTED | 1 | `products/p15-nomoredebate` |",
+      "| P15 | NoMoreDebate | Голосование, которое заканчивает спор за минуты | nomoredebate | ROOM | NOT_STARTED | 1 | `products/p15-nomoredebate` |",
     );
     expect(md).toContain("Status summary: NOT_STARTED: 32.");
   });

@@ -1,31 +1,31 @@
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, PageShell } from "@algohub/ui";
-import { products } from "@/registry";
+import { getTranslations } from "next-intl/server";
+import { CatalogSearch } from "@/catalog/catalog-search";
+import { toCatalogItems } from "@/catalog/items";
+import { SiteShell } from "@/layout/site-shell";
+import { isLaunched, products } from "@/registry";
 
-export default function HomePage() {
-  const ready = products.filter((p) => p.status === "MVP_READY" || p.status === "LIVE").length;
+export default async function HomePage() {
+  const t = await getTranslations();
+  const ready = products.filter(isLaunched).length;
+  const items = toCatalogItems(products, {
+    status: (s) => t(`status.${s}`),
+    profile: (p) => t(`profile.${p}`),
+    tag: (tag) => t(`tags.${tag}`),
+    wave: (w) => (w === null ? t("card.noWave") : t("card.wave", { wave: w })),
+  });
   return (
-    <PageShell
-      skipLinkLabel="Перейти к содержимому"
-      header={<span className="text-lg font-semibold">AlgoHub</span>}
-      footer={<span>AlgoHub · локальная сборка</span>}
-    >
-      <h1 className="text-3xl font-bold tracking-tight">AlgoHub</h1>
-      <p className="mt-3 max-w-prose text-muted-foreground">
-        Платформа из {products.length} небольших алгоритмических веб-продуктов: честные голосования, справедливые
-        графики смен, встречи на полпути и другие задачи, которые решаются алгоритмом, а не спором.
+    <SiteShell>
+      <h1 className="text-3xl font-bold tracking-tight">{t("home.title")}</h1>
+      <p className="mt-3 max-w-prose text-muted-foreground">{t("home.lead", { count: products.length })}</p>
+      <p className="mt-2 max-w-prose text-sm text-muted-foreground">
+        {t("home.readySummary", { ready, total: products.length })}
       </p>
-      <Card className="mt-8 max-w-prose">
-        <CardHeader>
-          <CardTitle>Каталог в разработке</CardTitle>
-          <CardDescription>
-            Каталог продуктов, поиск и страницы продуктов появятся в следующей фазе. Сейчас готово продуктов: {ready} из{" "}
-            {products.length}.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Badge variant="outline">Фаза 0 · каркас платформы</Badge>
-        </CardContent>
-      </Card>
-    </PageShell>
+      <section aria-labelledby="catalog-heading" className="mt-10">
+        <h2 id="catalog-heading" className="mb-4 text-2xl font-semibold">
+          {t("home.catalogHeading")}
+        </h2>
+        <CatalogSearch items={items} />
+      </section>
+    </SiteShell>
   );
 }

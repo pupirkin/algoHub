@@ -4,7 +4,9 @@ version = "0.0.0"
 description = "AlgoHub API composition root: mounts product routers under /api/v1/<pid>."
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "alembic==1.20.1",
     "algohub-shared-kernel",
+    "email-validator==2.3.0",
     "fastapi==0.162.5",
     "uvicorn[standard]==0.54.0",
 ]
