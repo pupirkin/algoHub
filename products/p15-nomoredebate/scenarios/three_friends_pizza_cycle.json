@@ -1,0 +1,40 @@
+{
+  "name": "three_friends_pizza_cycle",
+  "profile": "ROOM",
+  "description": "Камень-ножницы-бумага: у каждого варианта по одной победе в дуэлях. Честная ничья всех трёх, жребий по id комнаты.",
+  "input": {
+    "question": "Что заказываем?",
+    "options": ["Pizza", "Sushi", "Burgers"],
+    "method": "condorcet_borda",
+    "seed": "golden-cycle",
+    "voters": ["Ann", "Bo", "Cy"],
+    "ballots": [
+      [0, 1, 2],
+      [1, 2, 0],
+      [2, 0, 1]
+    ]
+  },
+  "expected": {
+    "outcome": "tie",
+    "winner": null,
+    "tied": ["Pizza", "Sushi", "Burgers"],
+    "tiebreak_pick": "Burgers",
+    "decided_by": "borda",
+    "condorcet_winner": null,
+    "borda_points": { "Pizza": 3, "Sushi": 3, "Burgers": 3 },
+    "explain_codes": ["no_condorcet_winner", "borda_top", "tie", "tiebreak"]
+  },
+  "ui": {
+    "steps": [
+      "create_room",
+      "join:Ann",
+      "vote:Ann",
+      "join:Bo",
+      "vote:Bo",
+      "join:Cy",
+      "vote:Cy",
+      "close",
+      "assert_result"
+    ]
+  }
+}

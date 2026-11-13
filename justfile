@@ -43,6 +43,13 @@ migrate:
 purge-waitlist:
     uv run python -m algo_api.platform.purge_waitlist
 
+# Delete a product's expired data per its retention policy (`products/<id>/api/.../retention.py`); needs a database
+purge id:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    pid="$(echo "{{ id }}" | tr '[:upper:]' '[:lower:]')"
+    uv run python -m "algohub_${pid}.retention"
+
 # Run portal-web (Next.js, :3000) and algo-api (uvicorn --reload, :8000) together; Ctrl-C stops both
 dev:
     #!/usr/bin/env bash
@@ -65,7 +72,7 @@ lint:
 # Type checks: tsc (all TS packages) + mypy --strict per Python member
 typecheck:
     pnpm typecheck
-    for m in {{ py_members }}; do uv run mypy "$m"; done
+    for m in {{ py_members }} products/*/api; do uv run mypy "$m"; done
 
 # Unit + property tests (all, or one product: `just test P15`)
 test id="":

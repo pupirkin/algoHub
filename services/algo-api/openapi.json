@@ -1,6 +1,158 @@
 {
   "components": {
     "schemas": {
+      "BallotOut": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "ranking": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ranking"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "required": [
+          "display_name",
+          "ranking",
+          "updated_at"
+        ],
+        "title": "BallotOut",
+        "type": "object"
+      },
+      "BallotRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "ranking": {
+            "description": "Distinct option ids of this room, most preferred first; unlisted share last place.",
+            "items": {
+              "description": "Option position within its room",
+              "exclusiveMaximum": 10.0,
+              "minimum": 0.0,
+              "type": "integer"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Ranking",
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "ranking"
+        ],
+        "title": "BallotRequest",
+        "type": "object"
+      },
+      "CreateRoomRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "deadline_minutes": {
+            "anyOf": [
+              {
+                "maximum": 10080.0,
+                "minimum": 5.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Voting closes automatically this many minutes after creation.",
+            "title": "Deadline Minutes"
+          },
+          "max_participants": {
+            "default": 30,
+            "maximum": 50.0,
+            "minimum": 2.0,
+            "title": "Max Participants",
+            "type": "integer"
+          },
+          "method": {
+            "$ref": "#/components/schemas/Method",
+            "default": "condorcet_borda"
+          },
+          "options": {
+            "description": "Distinct labels (compared ignoring case, width and extra spaces).",
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]*$",
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 2,
+            "title": "Options",
+            "type": "array",
+            "uniqueItems": true
+          },
+          "question": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]*$",
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "options"
+        ],
+        "title": "CreateRoomRequest",
+        "type": "object"
+      },
+      "CreatedRoom": {
+        "properties": {
+          "organizer_path": {
+            "description": "Portal path for the organizer; append '#t=<organizer_token>'.",
+            "title": "Organizer Path",
+            "type": "string"
+          },
+          "organizer_token": {
+            "description": "Shown once. Grants close/delete/participant list.",
+            "title": "Organizer Token",
+            "type": "string"
+          },
+          "room": {
+            "$ref": "#/components/schemas/RoomOut"
+          },
+          "share_path": {
+            "description": "Portal path participants open (no token inside).",
+            "title": "Share Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "room",
+          "organizer_token",
+          "share_path",
+          "organizer_path"
+        ],
+        "title": "CreatedRoom",
+        "type": "object"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -73,6 +225,192 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "IrvRoundOut": {
+        "properties": {
+          "eliminated": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eliminated"
+          },
+          "exhausted": {
+            "title": "Exhausted",
+            "type": "integer"
+          },
+          "votes": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Option id (as string) -> first-choice votes this round.",
+            "title": "Votes",
+            "type": "object"
+          }
+        },
+        "required": [
+          "votes",
+          "exhausted",
+          "eliminated"
+        ],
+        "title": "IrvRoundOut",
+        "type": "object"
+      },
+      "JoinRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]*$",
+            "title": "Display Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name"
+        ],
+        "title": "JoinRequest",
+        "type": "object"
+      },
+      "Joined": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "participant_id": {
+            "format": "uuid",
+            "title": "Participant Id",
+            "type": "string"
+          },
+          "participant_token": {
+            "description": "Shown once. Grants reading and replacing own ballot.",
+            "title": "Participant Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "participant_id",
+          "participant_token",
+          "display_name"
+        ],
+        "title": "Joined",
+        "type": "object"
+      },
+      "Method": {
+        "enum": [
+          "condorcet_borda",
+          "borda",
+          "irv",
+          "minimax_regret"
+        ],
+        "title": "Method",
+        "type": "string"
+      },
+      "OptionOut": {
+        "properties": {
+          "id": {
+            "description": "Option position within its room",
+            "exclusiveMaximum": 10.0,
+            "minimum": 0.0,
+            "title": "Id",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "OptionOut",
+        "type": "object"
+      },
+      "ParticipantList": {
+        "properties": {
+          "participants": {
+            "items": {
+              "$ref": "#/components/schemas/ParticipantOut"
+            },
+            "title": "Participants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "participants"
+        ],
+        "title": "ParticipantList",
+        "type": "object"
+      },
+      "ParticipantOut": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "has_voted": {
+            "title": "Has Voted",
+            "type": "boolean"
+          },
+          "joined_at": {
+            "format": "date-time",
+            "title": "Joined At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name",
+          "has_voted",
+          "joined_at"
+        ],
+        "title": "ParticipantOut",
+        "type": "object"
+      },
+      "Provenance": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "fetched_at": {
+            "description": "When the value was fetched or computed (ISO-8601, UTC).",
+            "format": "date-time",
+            "title": "Fetched At",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "live",
+              "demo",
+              "user"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "fetched_at"
+        ],
+        "title": "Provenance",
+        "type": "object"
+      },
       "ReadinessResponse": {
         "properties": {
           "checks": {
@@ -100,6 +438,352 @@
           "checks"
         ],
         "title": "ReadinessResponse",
+        "type": "object"
+      },
+      "ReasonOut": {
+        "properties": {
+          "code": {
+            "enum": [
+              "no_ballots",
+              "condorcet_winner",
+              "no_condorcet_winner",
+              "borda_top",
+              "irv_majority",
+              "irv_tie",
+              "minimax_regret_top",
+              "tie",
+              "tiebreak"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "option_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Option Ids",
+            "type": "array"
+          },
+          "round": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Round"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Borda points, IRV votes or max regret, depending on code.",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "code",
+          "option_ids",
+          "value",
+          "round"
+        ],
+        "title": "ReasonOut",
+        "type": "object"
+      },
+      "RegretOut": {
+        "properties": {
+          "max_regret": {
+            "title": "Max Regret",
+            "type": "integer"
+          },
+          "option_id": {
+            "title": "Option Id",
+            "type": "integer"
+          },
+          "total_regret": {
+            "title": "Total Regret",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "option_id",
+          "max_regret",
+          "total_regret"
+        ],
+        "title": "RegretOut",
+        "type": "object"
+      },
+      "ResultOut": {
+        "properties": {
+          "ballot_count": {
+            "title": "Ballot Count",
+            "type": "integer"
+          },
+          "borda_points": {
+            "description": "Indexed by option id; unlisted options share last place.",
+            "items": {
+              "type": "number"
+            },
+            "title": "Borda Points",
+            "type": "array"
+          },
+          "chosen_option_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Winner, or the tie-break pick among tied options.",
+            "title": "Chosen Option Id"
+          },
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "condorcet_winner_option_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condorcet Winner Option Id"
+          },
+          "decided_by": {
+            "enum": [
+              "condorcet",
+              "borda",
+              "irv",
+              "minimax_regret"
+            ],
+            "title": "Decided By",
+            "type": "string"
+          },
+          "irv_rounds": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IrvRoundOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Irv Rounds"
+          },
+          "method": {
+            "$ref": "#/components/schemas/Method"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/OptionOut"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "outcome": {
+            "enum": [
+              "winner",
+              "tie",
+              "no_ballots"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "pairwise_wins": {
+            "description": "[a][b] = ballots preferring a to b.",
+            "items": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "title": "Pairwise Wins",
+            "type": "array"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/ReasonOut"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "regrets": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RegretOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regrets"
+          },
+          "room_id": {
+            "format": "uuid",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "tiebreak_option_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tiebreak Option Id"
+          },
+          "tied_option_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Tied Option Ids",
+            "type": "array"
+          },
+          "winner_option_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winner Option Id"
+          }
+        },
+        "required": [
+          "outcome",
+          "winner_option_id",
+          "tied_option_ids",
+          "tiebreak_option_id",
+          "chosen_option_id",
+          "ballot_count",
+          "decided_by",
+          "condorcet_winner_option_id",
+          "borda_points",
+          "pairwise_wins",
+          "irv_rounds",
+          "regrets",
+          "reasons",
+          "room_id",
+          "method",
+          "computed_at",
+          "options",
+          "provenance"
+        ],
+        "title": "ResultOut",
+        "type": "object"
+      },
+      "RoomOut": {
+        "description": "Public state of a room: no tokens, no hashes, no names, no individual ballots.",
+        "properties": {
+          "ballot_count": {
+            "title": "Ballot Count",
+            "type": "integer"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "deadline_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "max_participants": {
+            "title": "Max Participants",
+            "type": "integer"
+          },
+          "method": {
+            "$ref": "#/components/schemas/Method"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/OptionOut"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "participant_count": {
+            "title": "Participant Count",
+            "type": "integer"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "closed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "question",
+          "method",
+          "status",
+          "deadline_at",
+          "created_at",
+          "closed_at",
+          "max_participants",
+          "participant_count",
+          "ballot_count",
+          "options"
+        ],
+        "title": "RoomOut",
         "type": "object"
       },
       "WaitlistAccepted": {
@@ -139,6 +823,13 @@
         "title": "WaitlistRequest",
         "type": "object"
       }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "description": "Capability token returned when creating/joining a room.",
+        "scheme": "bearer",
+        "type": "http"
+      }
     }
   },
   "info": {
@@ -147,6 +838,733 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/p15/rooms": {
+      "post": {
+        "operationId": "create_room_api_v1_p15_rooms_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedRoom"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Create a voting room; returns the organizer token once",
+        "tags": [
+          "p15"
+        ]
+      }
+    },
+    "/api/v1/p15/rooms/{room_id}": {
+      "delete": {
+        "operationId": "delete_room_api_v1_p15_rooms__room_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Organizer: delete the room and everything in it",
+        "tags": [
+          "p15"
+        ]
+      },
+      "get": {
+        "operationId": "get_room_api_v1_p15_rooms__room_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Public room state (no tokens, names or individual ballots)",
+        "tags": [
+          "p15"
+        ]
+      }
+    },
+    "/api/v1/p15/rooms/{room_id}/ballot": {
+      "get": {
+        "operationId": "get_ballot_api_v1_p15_rooms__room_id__ballot_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BallotOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Participant: read own ballot",
+        "tags": [
+          "p15"
+        ]
+      },
+      "put": {
+        "operationId": "put_ballot_api_v1_p15_rooms__room_id__ballot_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BallotRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BallotOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Participant: submit or replace own ranking (idempotent; last write wins)",
+        "tags": [
+          "p15"
+        ]
+      }
+    },
+    "/api/v1/p15/rooms/{room_id}/close": {
+      "post": {
+        "operationId": "close_room_api_v1_p15_rooms__room_id__close_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Organizer: close voting and compute the explained result (idempotent)",
+        "tags": [
+          "p15"
+        ]
+      }
+    },
+    "/api/v1/p15/rooms/{room_id}/participants": {
+      "get": {
+        "operationId": "list_participants_api_v1_p15_rooms__room_id__participants_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParticipantList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Organizer: who joined and who has voted (not how)",
+        "tags": [
+          "p15"
+        ]
+      },
+      "post": {
+        "operationId": "join_room_api_v1_p15_rooms__room_id__participants_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Joined"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Join a room under a display name; returns the participant token once",
+        "tags": [
+          "p15"
+        ]
+      }
+    },
+    "/api/v1/p15/rooms/{room_id}/result": {
+      "get": {
+        "operationId": "get_result_api_v1_p15_rooms__room_id__result_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "room_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Room Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "summary": "Result with explanation; 404 while the room is open",
+        "tags": [
+          "p15"
+        ]
+      }
+    },
     "/api/v1/platform/waitlist": {
       "post": {
         "operationId": "join_waitlist_api_v1_platform_waitlist_post",

@@ -1,0 +1,22 @@
+{
+  "name": "partial_ballots_unlisted_share_last",
+  "profile": "ROOM",
+  "description": "Неполные бюллетени: невыставленные варианты делят последнее место (баллы усредняются).",
+  "input": {
+    "question": "Где встречаемся?",
+    "options": ["Кафе «Ёлка»", "Парк", "Музей", "Каток"],
+    "method": "borda",
+    "seed": "golden-partial",
+    "ballots": [[0], [1], [0, 2]]
+  },
+  "expected": {
+    "outcome": "winner",
+    "winner": "Кафе «Ёлка»",
+    "tied": [],
+    "tiebreak_pick": null,
+    "decided_by": "borda",
+    "condorcet_winner": "Кафе «Ёлка»",
+    "borda_points": { "Кафе «Ёлка»": 7, "Парк": 4.5, "Музей": 4, "Каток": 2.5 },
+    "explain_codes": ["borda_top"]
+  }
+}

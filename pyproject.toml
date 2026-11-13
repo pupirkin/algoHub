@@ -19,6 +19,7 @@ dev = [
     "mypy==2.4.1",
     "import-linter==2.16",
     "pre-commit==4.7.0",
+    "schemathesis==4.33.4",
 ]
 
 [tool.uv]
@@ -69,6 +70,8 @@ warn_required_dynamic_aliases = true
 [tool.pytest.ini_options]
 addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib", "-m", "not integration"]
 testpaths = ["python", "services", "products"]
+# Shared test helpers (hypothesis strategies) importable by name; --import-mode=importlib does not touch sys.path.
+pythonpath = ["python/algorithms/tests", "products/p15-nomoredebate/api/tests"]
 markers = [
     "integration: needs a real Postgres (run `just up` then `just test-int`)",
 ]
@@ -79,17 +82,23 @@ filterwarnings = ["error"]
 # Product packages (`algohub_pXX`) are added to root_packages and to an `independence` contract by the
 # product's first API slice (manual until the Phase 2.5 generator does it).
 [tool.importlinter]
-root_packages = ["shared_kernel", "algorithms", "algo_api"]
+root_packages = ["shared_kernel", "algorithms", "algo_api", "algohub_p15"]
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "algorithms are pure: no DB, HTTP, settings or platform code"
 type = "forbidden"
 source_modules = ["algorithms"]
-forbidden_modules = ["shared_kernel", "algo_api", "sqlalchemy", "fastapi", "starlette", "httpx", "httpx2", "pydantic_settings", "psycopg", "structlog"]
+forbidden_modules = ["shared_kernel", "algo_api", "algohub_p15", "sqlalchemy", "fastapi", "starlette", "httpx", "httpx2", "pydantic_settings", "psycopg", "structlog"]
 
 [[tool.importlinter.contracts]]
 name = "shared_kernel does not know about services or products"
 type = "forbidden"
 source_modules = ["shared_kernel"]
-forbidden_modules = ["algo_api", "algorithms"]
+forbidden_modules = ["algo_api", "algorithms", "algohub_p15"]
+
+[[tool.importlinter.contracts]]
+name = "products are independent and never import the composition root"
+type = "forbidden"
+source_modules = ["algohub_p15"]
+forbidden_modules = ["algo_api"]

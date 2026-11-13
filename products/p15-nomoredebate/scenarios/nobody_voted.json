@@ -1,0 +1,19 @@
+{
+  "name": "nobody_voted",
+  "profile": "ROOM",
+  "description": "Организатор закрыл комнату без голосов: исход «нет голосов», победителя не придумываем.",
+  "input": {
+    "question": "Во сколько созвон?",
+    "options": ["10:00", "12:00"],
+    "method": "condorcet_borda",
+    "seed": "golden-empty",
+    "ballots": []
+  },
+  "expected": {
+    "outcome": "no_ballots",
+    "winner": null,
+    "tied": [],
+    "tiebreak_pick": null,
+    "explain_codes": ["no_ballots"]
+  }
+}
