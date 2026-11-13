@@ -102,3 +102,10 @@ name = "products are independent and never import the composition root"
 type = "forbidden"
 source_modules = ["algohub_p15"]
 forbidden_modules = ["algo_api"]
+
+[[tool.importlinter.contracts]]
+name = "only algo_api.products knows product packages"
+type = "forbidden"
+source_modules = ["algo_api"]
+forbidden_modules = ["algohub_p15"]
+ignore_imports = ["algo_api.products -> algohub_p15", "algo_api.products -> algohub_p15.*"]

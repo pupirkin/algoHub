@@ -20,9 +20,11 @@ export function ResultView({ roomId }: { roomId: string }) {
     state.kind === "failed" && state.failure.kind === "http" && state.failure.code === "result_not_ready";
 
   // Waiting participants see the result appear without reloading; stop polling once it is there.
+  // A deleted/unknown room will not get a result either: stop polling for it too.
+  const gone = state.kind === "failed" && !notReady && state.failure.kind === "http" && state.failure.status === 404;
   useEffect(() => {
-    if (state.kind === "ready" && live) queueMicrotask(() => setLive(false));
-  }, [state.kind, live]);
+    if ((state.kind === "ready" || gone) && live) queueMicrotask(() => setLive(false));
+  }, [state.kind, gone, live]);
 
   if (state.kind === "loading") return <Loading />;
   if (notReady) {

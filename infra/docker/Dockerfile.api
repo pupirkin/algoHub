@@ -30,7 +30,7 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/services/algo-api/alembic.ini services/algo-api/alembic.ini
 COPY --from=builder /app/services/algo-api/migrations services/algo-api/migrations
 COPY --from=builder /app/products products
-COPY infra/docker/migrate.sh /usr/local/bin/migrate
+COPY --chmod=0755 infra/docker/migrate.sh /usr/local/bin/migrate
 ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 USER app
 EXPOSE 8000

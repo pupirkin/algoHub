@@ -7,16 +7,18 @@ from __future__ import annotations
 
 import threading
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from alembic import command
 from p15_testkit import alembic_config, db_url
 from sqlalchemy import Engine, create_engine, inspect, text
+from sqlalchemy.exc import IntegrityError
 
 from algohub_p15 import tables
 from algohub_p15.domain import delete_after_open, token_hash
+from algohub_p15.errors import RoomClosedError
 from algohub_p15.store import NewParticipant, NewRoom, RoomStore, SqlRoomStore
 from shared_kernel.db import create_session_factory
 
@@ -70,6 +72,29 @@ def test_tables_match_sqlalchemy_definitions(migrated_engine: Engine) -> None:
         assert checks == {c.name for c in table.constraints if c.__class__.__name__ == "CheckConstraint"}
         uniques = {u["name"] for u in insp.get_unique_constraints(table.name, schema="p15")}
         assert uniques == {c.name for c in table.constraints if c.__class__.__name__ == "UniqueConstraint"}
+        pk = insp.get_pk_constraint(table.name, schema="p15")
+        assert sorted(pk["constrained_columns"]) == sorted(c.name for c in table.primary_key.columns), (
+            table.name
+        )
+        db_fks = {
+            (
+                tuple(fk["constrained_columns"]),
+                fk["referred_table"],
+                tuple(fk["referred_columns"]),
+                (fk.get("options") or {}).get("ondelete"),
+            )
+            for fk in insp.get_foreign_keys(table.name, schema="p15")
+        }
+        model_fks = {
+            (
+                tuple(fk.column_keys),
+                next(iter(fk.elements)).column.table.name,
+                tuple(e.column.name for e in fk.elements),
+                fk.ondelete,
+            )
+            for fk in table.foreign_key_constraints
+        }
+        assert db_fks == model_fks, table.name
         db_indexes = insp.get_indexes(table.name, schema="p15")
         indexes = {i["name"] for i in db_indexes if not i.get("duplicates_constraint")}
         assert indexes == {i.name for i in table.indexes}, table.name
@@ -173,3 +198,47 @@ def test_retention_purges_expired_rooms_only(store: RoomStore) -> None:
     assert store.get_room(old.id) is None
     assert store.get_room(fresh.id) is not None
     assert store.purge_expired(T0) == 0
+
+
+@pytest.mark.integration
+def test_ballots_racing_a_close_are_either_counted_or_rejected(sql_store: SqlRoomStore) -> None:
+    room = _room()
+    sql_store.create_room(room)
+    voters = [_participant(f"V{i}") for i in range(8)]
+    for v in voters:
+        sql_store.add_participant(room.id, v, T0)
+    seen: list[int] = []
+
+    def compute(
+        _room: object, ballots: Sequence[tuple[int, ...]]
+    ) -> tuple[str, int | None, dict[str, object]]:
+        seen.append(len(ballots))
+        return ("winner" if ballots else "no_ballots"), None, {"n": len(ballots)}
+
+    def act(i: int) -> object:
+        if i == len(voters):
+            return sql_store.close_room(room.id, T0, compute)
+        return sql_store.put_ballot(room.id, voters[i].id, (0, 1), T0)
+
+    results = _race(len(voters) + 1, act)
+    unexpected = [r for r in results if isinstance(r, Exception) and not isinstance(r, RoomClosedError)]
+    assert unexpected == []
+    accepted = sum(1 for r in results[:-1] if not isinstance(r, Exception))
+    assert seen == [accepted]  # computed once, over exactly the ballots committed before the close
+    record = sql_store.get_room(room.id)
+    assert record is not None
+    assert record.ballot_count == accepted
+
+
+@pytest.mark.integration
+def test_a_ballot_cannot_point_at_another_room(sql_store: SqlRoomStore, migrated_engine: Engine) -> None:
+    a, b = _room(), _room()
+    for r in (a, b):
+        sql_store.create_room(r)
+    ann = _participant("Ann")
+    sql_store.add_participant(a.id, ann, T0)
+    with pytest.raises(IntegrityError), migrated_engine.begin() as conn:
+        conn.execute(
+            text("INSERT INTO p15.ballots VALUES (:p, :r, ARRAY[0]::smallint[], now())"),
+            {"p": ann.id, "r": b.id},
+        )

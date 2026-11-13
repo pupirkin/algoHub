@@ -9,6 +9,7 @@ import { storage } from "../storage";
 
 export const METHODS: readonly Method[] = ["condorcet_borda", "borda", "irv", "minimax_regret"];
 const DEADLINES = [null, 30, 60, 1440, 4320] as const;
+const MAX_PARTICIPANTS = [5, 10, 20, 30, 50] as const;
 export const MAX_OPTIONS = 10;
 
 type FormError = "question" | "options" | "invalid" | "rateLimited" | "unavailable";
@@ -35,11 +36,12 @@ export function CreateRoom() {
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [method, setMethod] = useState<Method>("condorcet_borda");
   const [deadline, setDeadline] = useState<(typeof DEADLINES)[number]>(null);
+  const [maxParticipants, setMaxParticipants] = useState<number>(30);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ key: FormError; attempt: number } | null>(null);
   const attempts = useRef(0);
   const optionRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const ids = { question: useId(), error: useId(), deadline: useId(), method: useId() };
+  const ids = { question: useId(), error: useId(), deadline: useId(), method: useId(), max: useId() };
 
   function updateOption(i: number, value: string) {
     setOptions((prev) => prev.map((o, j) => (j === i ? value : o)));
@@ -71,6 +73,7 @@ export function CreateRoom() {
       options: options.map((o) => o.trim()).filter((o) => o.length > 0),
       method,
       deadline_minutes: deadline,
+      max_participants: maxParticipants,
     });
     if (res.ok) {
       const { room, organizer_token: token, organizer_path: organizerPath } = res.value;
@@ -182,6 +185,24 @@ export function CreateRoom() {
             {DEADLINES.map((d) => (
               <option key={d ?? "none"} value={d ?? ""}>
                 {d === null ? t("deadlineNone") : t(`deadline${d}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor={ids.max} className="text-sm font-medium">
+            {t("maxParticipants")}
+          </label>
+          <select
+            id={ids.max}
+            value={maxParticipants}
+            onChange={(e) => setMaxParticipants(Number(e.target.value))}
+            className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+          >
+            {MAX_PARTICIPANTS.map((n) => (
+              <option key={n} value={n}>
+                {t("upTo", { n })}
               </option>
             ))}
           </select>

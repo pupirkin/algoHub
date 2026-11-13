@@ -64,6 +64,9 @@ def test_text_is_normalized(api: TestClient) -> None:
         {"question": "Q", "options": ["A", "B"], "max_participants": 51},
         {"question": "Q", "options": ["A", "B"], "organizer_token": "mine"},
         {"options": ["A", "B"]},
+        # NFC lengthens U+0958 to two code points: within the raw limit, over it after normalization.
+        {"question": "\u0958" * 200, "options": ["A", "B"]},
+        {"question": "Q", "options": ["A", "\u0958" * 80]},
     ],
 )
 def test_create_validation_is_422_with_fields(api: TestClient, body: dict[str, Any]) -> None:
@@ -169,7 +172,7 @@ def test_room_full_is_409(api: TestClient) -> None:
     assert (res.status_code, res.json()["error"]["code"]) == (409, "room_full")
 
 
-@pytest.mark.parametrize("name", ["", "   ", "x" * 41, "a\tb", "a\u007fb"])
+@pytest.mark.parametrize("name", ["", "   ", "x" * 41, "a\tb", "a\u007fb", "\u0958" * 40])
 def test_bad_display_name_is_422(api: TestClient, name: str) -> None:
     rid = create_room(api)["room"]["id"]
     assert api.post(f"{API}/rooms/{rid}/participants", json={"display_name": name}).status_code == 422

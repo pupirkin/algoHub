@@ -1,4 +1,6 @@
-"""SQLAlchemy Core tables of schema ``p15``. Mirror of migration 0001; the integration test compares them.
+"""SQLAlchemy Core tables of schema ``p15``: mirror of migration 0001.
+
+The integration test compares columns, keys and constraints with the migrated database.
 
 Every foreign key stays inside the schema (ADR-0005). Deleting a room cascades to everything it owns.
 """
@@ -10,6 +12,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     MetaData,
@@ -72,6 +75,7 @@ participants = Table(
     Column("joined_at", DateTime(timezone=True), nullable=False),
     UniqueConstraint("room_id", "name_key", name="uq_participants_room_name"),
     UniqueConstraint("token_hash", name="uq_participants_token_hash"),
+    UniqueConstraint("id", "room_id", name="uq_participants_id_room"),  # target of the ballots composite FK
     CheckConstraint("char_length(display_name) BETWEEN 1 AND 40", name="ck_participants_name_length"),
     CheckConstraint("token_hash ~ '^[0-9a-f]{64}$'", name="ck_participants_token_hash"),
     Index("ix_participants_room_id", "room_id"),
@@ -80,15 +84,17 @@ participants = Table(
 ballots = Table(
     "ballots",
     metadata,
-    Column(
-        "participant_id",
-        Uuid,
-        ForeignKey("p15.participants.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
+    Column("participant_id", Uuid, primary_key=True),
     Column("room_id", Uuid, ForeignKey("p15.rooms.id", ondelete="CASCADE"), nullable=False),
     Column("ranking", ARRAY(SmallInteger), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False),
+    # A ballot always belongs to its participant's room (not only by service code).
+    ForeignKeyConstraint(
+        ["participant_id", "room_id"],
+        ["p15.participants.id", "p15.participants.room_id"],
+        ondelete="CASCADE",
+        name="fk_ballots_participant_room",
+    ),
     CheckConstraint("cardinality(ranking) BETWEEN 1 AND 10", name="ck_ballots_ranking_length"),
     Index("ix_ballots_room_id", "room_id"),
 )

@@ -6,7 +6,8 @@ Branch: `feat/p15-nomoredebate` (stacked on `feat/portal-catalog`, PR #7 not mer
 
 ## Acceptance criteria (MVP_READY, ARCHITECTURE_PLAN §7 + TESTING_STRATEGY §7)
 - [x] Алгоритмы (`social_choice`): oracle, property, golden, budget — зелёные.
-- [x] Schema `p15` + Alembic-миграция `0001`; модель ↔ миграция, нет cross-schema FK (тест, integration).
+- [~] Schema `p15` + Alembic-миграция `0001` написаны; тесты «модель ↔ миграция», «нет cross-schema FK», гонки и
+      retention на Postgres — **NOT RUN (нет Docker)**, первый прогон — CI `test-py`.
 - [x] API `/api/v1/p15`: валидация, authz-матрица, лимиты, идемпотентность `PUT /ballot`, дедлайн, приватность.
 - [x] Контракт: `openapi.json` обновлён; schemathesis без 5xx и с соответствием схеме.
 - [x] `@algohub/api-client` сгенерирован, дрейф проверяется.
@@ -24,11 +25,15 @@ Branch: `feat/p15-nomoredebate` (stacked on `feat/portal-catalog`, PR #7 not mer
   до удаления по retention (30 дней от создания).
 - Лимиты на IP — на процесс (как у waitlist); за прокси нужен `--proxy-headers` (BUILD_STATE, pre-deploy).
 - Имена участников видит только организатор; публично — только счётчики.
+- UI отправляет полное ранжирование (все варианты по порядку); API и алгоритмы принимают и неполные бюллетени
+  (PRD) — неполные приходят только через API. Режим «выставить не все» в UI — кандидат после валидации.
+- Размер среза превышает ориентир ~600 строк (CLAUDE.md rule 1): ветка содержит 3 самостоятельных коммита
+  (алгоритм + API; UI + клиент; инфраструктура + e2e + dod). Если владельцу удобнее — PR по одному на коммит.
 
 ## Verification log
 - 2026-11-13 `just dod P15` → INCOMPLETE (24 s): статика, тесты продукта, наборы алгоритмов, контракт — ✅;
   интеграция/e2e/axe — NOT RUN (нет Docker).
-- 2026-11-13 `just e2e-preview P15` → 8 passed (7.2 s) — не засчитывается в DoD (in-memory, без образов и Postgres).
+- 2026-11-13 после ревью: pytest 221 passed / 97 deselected (11.3 s), Vitest p15 56; `just e2e-preview P15` → 8 passed (7.9 s) — не засчитывается в DoD (in-memory, без образов и Postgres).
 - 2026-11-13 ручной прогон в браузере (preview): создание → 3 голоса → закрытие → «Победил вариант «Sushi»»,
   375 px без горизонтального скролла, 0 ошибок консоли.
 

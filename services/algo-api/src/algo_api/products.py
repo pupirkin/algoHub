@@ -15,6 +15,7 @@ from sqlalchemy import Engine
 
 import algohub_p15
 from algohub_p15 import router as p15_router
+from algohub_p15.memory_store import InMemoryRoomStore
 from algohub_p15.store import SqlRoomStore
 from shared_kernel.db import create_session_factory
 
@@ -44,3 +45,12 @@ def p15_mount(setup: Setup = _p15_setup) -> ProductMount:
 
 def product_mounts() -> list[ProductMount]:
     return [p15_mount()]
+
+
+def _p15_memory_setup(app: FastAPI, _engine: Engine) -> None:
+    p15_router.install(app, InMemoryRoomStore())
+
+
+def preview_mounts() -> list[ProductMount]:
+    """In-memory stores for `just preview` / `just e2e-preview` only (no database; data lost on restart)."""
+    return [p15_mount(_p15_memory_setup)]

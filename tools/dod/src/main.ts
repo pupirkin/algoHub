@@ -68,7 +68,12 @@ if (staticOnly) {
       const codes: number[] = [];
       for (const [cmd, ...args] of check.commands) {
         console.error(`dod: running ${[cmd, ...args].join(" ")}`);
-        const run = spawnSync(cmd!, args, { cwd: root, stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" });
+        const run = spawnSync(cmd!, args, {
+          cwd: root,
+          stdio: ["ignore", "pipe", "pipe"],
+          encoding: "utf8",
+          maxBuffer: 256 * 1024 * 1024, // image builds are chatty; a full buffer must not look like a failure
+        });
         codes.push(run.status ?? 1);
         if (run.status !== 0) {
           console.error(`${run.stdout ?? ""}${run.stderr ?? ""}`.split("\n").slice(-25).join("\n"));

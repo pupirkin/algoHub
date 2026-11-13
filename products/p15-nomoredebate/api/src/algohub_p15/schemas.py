@@ -30,6 +30,19 @@ def normalize_text(value: str) -> str:
     return " ".join(unicodedata.normalize("NFC", value).split())
 
 
+def normalized(value: str, field: str, max_length: int) -> str:
+    """Normalizes, then re-checks emptiness and length: NFC can LENGTHEN a string (U+0958 -> 2 code points),
+    so the pydantic limit on the raw input is not enough for the database CHECK (422, never a 500)."""
+    v = normalize_text(value)
+    if not v:
+        msg = f"{field} must not be blank"
+        raise ValueError(msg)
+    if len(v) > max_length:
+        msg = f"{field} must be at most {max_length} characters after normalization"
+        raise ValueError(msg)
+    return v
+
+
 def name_key(value: str) -> str:
     """Comparison key for «the same name / the same option» (case- and width-insensitive)."""
     return unicodedata.normalize("NFKC", normalize_text(value)).casefold()
@@ -66,19 +79,12 @@ class CreateRoomRequest(_In):
     @field_validator("question")
     @classmethod
     def _question(cls, v: str) -> str:
-        v = normalize_text(v)
-        if not v:
-            msg = "question must not be blank"
-            raise ValueError(msg)
-        return v
+        return normalized(v, "question", 200)
 
     @field_validator("options")
     @classmethod
     def _options(cls, v: list[str]) -> list[str]:
-        labels = [normalize_text(o) for o in v]
-        if any(not label for label in labels):
-            msg = "option labels must not be blank"
-            raise ValueError(msg)
+        labels = [normalized(o, "option label", 80) for o in v]
         if len({name_key(label) for label in labels}) != len(labels):
             msg = "option labels must be distinct"
             raise ValueError(msg)
@@ -91,11 +97,7 @@ class JoinRequest(_In):
     @field_validator("display_name")
     @classmethod
     def _name(cls, v: str) -> str:
-        v = normalize_text(v)
-        if not v:
-            msg = "display_name must not be blank"
-            raise ValueError(msg)
-        return v
+        return normalized(v, "display_name", 40)
 
 
 class BallotRequest(_In):

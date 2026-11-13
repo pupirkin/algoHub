@@ -155,9 +155,11 @@ jobs:
           retention-days: 7
 
   e2e-p15:
-    name: e2e P15 (compose, Playwright + axe)
+    # The MVP_READY gate for P15 (CLAUDE.md rule 3): the full `just dod P15` on a runner WITH Docker —
+    # static checks, product + algorithm tests, contract, integration (`just test-int`) and the compose e2e with axe.
+    name: dod P15 (integration + compose e2e + axe)
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -165,17 +167,25 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3 (no moving major tag)
+        with:
+          python-version: "3.12"
+          enable-cache: true
       - uses: extractions/setup-just@v4
-      - run: pnpm install --frozen-lockfile
+      - name: Install
+        run: |
+          pnpm install --frozen-lockfile
+          uv sync --frozen
+          cp .env.example .env
       - name: Install Chromium for Playwright
         run: pnpm --filter @algohub/portal-web exec playwright install --with-deps chromium
-      - name: P15 happy path against docker compose (postgres, migrations, algo-api, portal-web images)
-        run: just e2e P15
+      - name: just dod P15 (GREEN required; prints the full table)
+        run: just dod P15
       - name: Upload Playwright report and compose logs on failure
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: e2e-p15
+          name: dod-p15
           path: |
             apps/portal-web/playwright-report-products
             apps/portal-web/test-results

@@ -145,6 +145,12 @@ export function OrganizerRoom({ roomId }: { roomId: string }) {
         </h2>
         {people.state.kind === "loading" ? (
           <Loading />
+        ) : people.state.kind === "failed" &&
+          people.state.failure.kind === "http" &&
+          (people.state.failure.status === 401 || people.state.failure.status === 403) ? (
+          <p role="alert" className="mt-2 rounded-md border border-border bg-muted p-3 text-sm">
+            {t("noToken")}
+          </p>
         ) : people.state.kind === "failed" ? (
           <Failure failure={people.state.failure} onRetry={() => void people.reload()} />
         ) : people.state.value.length === 0 ? (

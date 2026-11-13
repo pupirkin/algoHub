@@ -67,6 +67,7 @@ describe("CreateRoom", () => {
     fill("  Что заказываем? ", ["Pizza", "Sushi", "Burgers"]);
     fireEvent.click(screen.getByLabelText("Как на выборах (выбывание)"));
     fireEvent.change(screen.getByLabelText("Закрыть автоматически"), { target: { value: "60" } });
+    fireEvent.change(screen.getByLabelText("Сколько участников максимум"), { target: { value: "10" } });
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Создать комнату" }));
     });
@@ -75,6 +76,7 @@ describe("CreateRoom", () => {
       options: ["Pizza", "Sushi", "Burgers"],
       method: "irv",
       deadline_minutes: 60,
+      max_participants: 10,
     });
     expect(storage.organizerToken(ROOM_ID)).toBe("organizer-token-123456");
     expect(env.navigate).toHaveBeenCalledWith(`/p/nomoredebate/r/${ROOM_ID}/admin#t=organizer-token-123456`);
@@ -244,6 +246,16 @@ describe("OrganizerRoom", () => {
     expect(env.navigate).toHaveBeenCalledWith(`/p/nomoredebate/r/${ROOM_ID}/result`);
   });
 
+  it("a token the server rejects is explained, not offered for retry", async () => {
+    storage.setOrganizerToken(ROOM_ID, "stale-organizer-token-00");
+    const participants = vi.fn(() => Promise.resolve(err(http(403, "invalid_token"))));
+    renderWith(<OrganizerRoom roomId={ROOM_ID} />, { api: fakeApi({ participants }) });
+    await settle();
+    await settle();
+    expect(screen.getByText(/страница организатора/)).toBeDefined();
+    expect(screen.queryByRole("button", { name: "Повторить" })).toBeNull();
+  });
+
   it("deletes the room after confirmation and forgets the token", async () => {
     storage.setOrganizerToken(ROOM_ID, "organizer-token-123456");
     const deleteRoom = vi.fn(() => Promise.resolve(ok(undefined)));
@@ -272,10 +284,14 @@ describe("ResultView", () => {
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Что заказываем?");
   });
 
-  it("a deleted room is not found", async () => {
+  it("a deleted room is not found, and polling stops", async () => {
     const res = vi.fn(() => Promise.resolve(err(http(404, "room_not_found"))));
-    renderWith(<ResultView roomId={ROOM_ID} />, { api: fakeApi({ result: res }) });
+    renderWith(<ResultView roomId={ROOM_ID} />, { api: fakeApi({ result: res }), pollMs: 10 });
     await settle();
     expect(screen.getByRole("alert").textContent).toMatch(/Комната не найдена/);
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 80));
+    });
+    expect(res.mock.calls.length).toBeLessThanOrEqual(2);
   });
 });

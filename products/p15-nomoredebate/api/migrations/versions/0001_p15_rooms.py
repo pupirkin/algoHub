@@ -63,6 +63,7 @@ def upgrade() -> None:
         sa.Column("joined_at", sa.DateTime(timezone=True), nullable=False),
         sa.UniqueConstraint("room_id", "name_key", name="uq_participants_room_name"),
         sa.UniqueConstraint("token_hash", name="uq_participants_token_hash"),
+        sa.UniqueConstraint("id", "room_id", name="uq_participants_id_room"),
         sa.CheckConstraint("char_length(display_name) BETWEEN 1 AND 40", name="ck_participants_name_length"),
         sa.CheckConstraint("token_hash ~ '^[0-9a-f]{64}$'", name="ck_participants_token_hash"),
         schema=S,
@@ -70,15 +71,16 @@ def upgrade() -> None:
     op.create_index("ix_participants_room_id", "participants", ["room_id"], schema=S)
     op.create_table(
         "ballots",
-        sa.Column(
-            "participant_id",
-            sa.Uuid,
-            sa.ForeignKey(f"{S}.participants.id", ondelete="CASCADE"),
-            primary_key=True,
-        ),
+        sa.Column("participant_id", sa.Uuid, primary_key=True),
         sa.Column("room_id", sa.Uuid, sa.ForeignKey(f"{S}.rooms.id", ondelete="CASCADE"), nullable=False),
         sa.Column("ranking", postgresql.ARRAY(sa.SmallInteger), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["participant_id", "room_id"],
+            [f"{S}.participants.id", f"{S}.participants.room_id"],
+            ondelete="CASCADE",
+            name="fk_ballots_participant_room",
+        ),
         sa.CheckConstraint("cardinality(ranking) BETWEEN 1 AND 10", name="ck_ballots_ranking_length"),
         schema=S,
     )
