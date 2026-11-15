@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     log_json: bool = True
     database_url: SecretStr
     db_connect_timeout_s: float = Field(default=2.0, gt=0, le=30)
+    max_body_bytes: int = Field(default=16 * 1024, ge=1024, le=10 * 1024 * 1024)
     cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["http://localhost:3000"])
 
     @field_validator("database_url")

@@ -7,3 +7,6 @@ packages:
 # Only these dependencies may run install scripts (pnpm blocks all others by default).
 allowBuilds:
   esbuild: true
+  # next-intl's optional message extractor; not used (messages are hand-written JSON), scripts stay blocked.
+  "@parcel/watcher": false
+  "@swc/core": false

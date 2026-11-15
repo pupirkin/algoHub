@@ -21,6 +21,7 @@ export default tseslint.config(
       "**/next-env.d.ts",
       ".venv/**",
       "**/playwright-report/**",
+      "**/playwright-report-products/**",
     ],
   },
   js.configs.recommended,

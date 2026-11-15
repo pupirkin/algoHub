@@ -1,0 +1,18 @@
+# Build context = repo root (infra/docker/Dockerfile.*). Keep it small and secret-free.
+**/node_modules
+**/.next
+**/.turbo
+**/coverage
+**/playwright-report
+**/test-results
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.hypothesis
+.venv
+.git
+.env
+.env.*
+!.env.example
+.claude

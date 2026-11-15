@@ -186,7 +186,7 @@ Worker: `SELECT … FOR UPDATE SKIP LOCKED`, выполняет в подпро�
 
 **Provenance.** Поле обязательно в схемах всех DATA-ответов и всех расчётов, зависящих от внешних чисел. UI-компонент `<ProvenanceBadge>` в `@algohub/ui`; `demo` рендерится заметно. Тест в `packages/core` проверяет, что схемы DATA-продуктов содержат поле (структурная проверка OpenAPI-снапшота).
 
-**Rate limiting и защита от злоупотреблений.** `slowapi` на write-эндпоинтах по IP; лимиты размеров тела; у ROOM-продуктов — лимит участников на комнату и комнат на IP в час. Security headers в `next.config` (CSP с nonce, HSTS, frame-ancestors). CORS — явный allowlist origin'ов.
+**Rate limiting и защита от злоупотреблений.** `shared_kernel.ratelimit` (fixed window в памяти процесса, без внешних зависимостей; проверка до разбора тела через `limited_route_class`) на write-эндпоинтах по IP — лимит на процесс, за reverse proxy uvicorn запускается с `--proxy-headers` и строгим `--forwarded-allow-ips`; лимит размера тела — `shared_kernel.bodylimit` (413 в формате ошибок); у ROOM-продуктов — лимит участников на комнату и комнат на IP в час. Security headers в `next.config` (CSP с nonce, HSTS, frame-ancestors). CORS — явный allowlist origin'ов.
 
 **Retention.** Каждая schema продукта объявляет политику в `api/retention.py` (например, комнаты P15 — 30 дней после закрытия). Worker выполняет очистку ночью. Пользователь может удалить комнату organizer-токеном.
 

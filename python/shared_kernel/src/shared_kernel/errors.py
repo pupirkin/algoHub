@@ -12,6 +12,7 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from shared_kernel.request_context import current_request_id
@@ -29,10 +30,13 @@ class AppError(Exception):
     status: ClassVar[HTTPStatus] = HTTPStatus.BAD_REQUEST
     code: ClassVar[str] = "bad_request"
 
-    def __init__(self, message: str, *, details: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self, message: str, *, details: dict[str, Any] | None = None, headers: dict[str, str] | None = None
+    ) -> None:
         super().__init__(message)
         self.message = message
         self.details = details
+        self.headers = headers
 
 
 class NotFoundError(AppError):
@@ -65,6 +69,29 @@ class ServiceUnavailableError(AppError):
     code = "service_unavailable"
 
 
+class PayloadTooLargeError(AppError):
+    status = HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+    code = "payload_too_large"
+
+
+class ErrorBody(BaseModel):
+    code: str
+    message: str
+    request_id: str
+    details: dict[str, Any] | None = None
+
+
+class ErrorEnvelope(BaseModel):
+    """Wire format of every error response; use ``error_responses`` to document it in OpenAPI."""
+
+    error: ErrorBody
+
+
+def error_responses(*statuses: int) -> dict[int | str, dict[str, Any]]:
+    """OpenAPI ``responses=`` entry documenting the error envelope for the given status codes."""
+    return {s: {"model": ErrorEnvelope, "description": HTTPStatus(s).phrase} for s in statuses}
+
+
 def error_body(code: str, message: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
     err: dict[str, Any] = {"code": code, "message": message, "request_id": current_request_id()}
     if details:
@@ -78,7 +105,9 @@ def _response(status: int, body: dict[str, Any]) -> JSONResponse:
 
 async def _app_error(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, AppError)  # noqa: S101 — registered only for AppError
-    return _response(exc.status, error_body(exc.code, exc.message, exc.details))
+    return JSONResponse(
+        status_code=exc.status, content=error_body(exc.code, exc.message, exc.details), headers=exc.headers
+    )
 
 
 async def _validation_error(_: Request, exc: Exception) -> JSONResponse:
@@ -97,11 +126,15 @@ async def _validation_error(_: Request, exc: Exception) -> JSONResponse:
     )
 
 
+# Stable machine codes where the HTTP phrase differs between Python versions or from our AppError codes.
+_HTTP_CODES: dict[int, str] = {HTTPStatus.REQUEST_ENTITY_TOO_LARGE: PayloadTooLargeError.code}
+
+
 async def _http_error(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, StarletteHTTPException)  # noqa: S101
     try:
         phrase = HTTPStatus(exc.status_code).phrase
-        code = phrase.lower().replace(" ", "_")
+        code = _HTTP_CODES.get(exc.status_code, phrase.lower().replace(" ", "_"))
     except ValueError:  # non-standard status (e.g. 499): keep it, use a generic code
         phrase, code = "Error", "http_error"
     message = exc.detail if isinstance(exc.detail, str) else phrase

@@ -1,0 +1,32 @@
+{
+  "name": "compromise_wins_borda",
+  "profile": "ROOM",
+  "description": "B — второй выбор почти у всех. По Борда побеждает компромисс B (11 баллов против 8 и 8).",
+  "input": {
+    "question": "Куда едем в выходные?",
+    "options": ["A", "B", "C"],
+    "method": "borda",
+    "seed": "golden-compromise",
+    "ballots": [
+      [0, 1, 2],
+      [0, 1, 2],
+      [0, 1, 2],
+      [0, 1, 2],
+      [2, 1, 0],
+      [2, 1, 0],
+      [2, 1, 0],
+      [1, 2, 0],
+      [1, 2, 0]
+    ]
+  },
+  "expected": {
+    "outcome": "winner",
+    "winner": "B",
+    "tied": [],
+    "tiebreak_pick": null,
+    "decided_by": "borda",
+    "condorcet_winner": "B",
+    "borda_points": { "A": 8, "B": 11, "C": 8 },
+    "explain_codes": ["borda_top"]
+  }
+}
