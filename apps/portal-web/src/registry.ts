@@ -1,4 +1,5 @@
 import type { ProductProfile, ProductStatus } from "@algohub/core";
+import type { ComponentType } from "react";
 
 /**
  * Product registry — the SINGLE source of truth for the catalog (ARCHITECTURE_PLAN §6).
@@ -8,7 +9,8 @@ import type { ProductProfile, ProductStatus } from "@algohub/core";
  * Content (`tagline`, `purpose`) is the Russian source text taken from PROJECT_CATALOG.md (default and only
  * locale today). UI chrome goes through next-intl (`messages/ru.json`); tags are i18n keys. When a second
  * locale arrives, product texts move to `messages/<locale>.json` keyed by product id (see BUILD_STATE).
- * `load: () => import(...)` is added by a product's first web slice (none exist yet).
+ * `load: () => import(...)` is added by a product's first web slice; this file is the ONLY place in the portal
+ * allowed to import product packages (eslint-plugin-boundaries), and only lazily.
  */
 export type ProductId = `P${number}`;
 export type Wave = "1" | "1.5" | "2" | "3";
@@ -32,6 +34,16 @@ export interface ProductEntry {
   readonly status: ProductStatus;
   /** Planned delivery wave; null = not scheduled yet. */
   readonly wave: Wave | null;
+  /** Lazy entry of the product's web package (code-split; never imported eagerly). */
+  readonly load?: () => Promise<ProductModule>;
+}
+
+/** Contract every product web package exports (see products/<id>/web/src/index.ts). */
+export interface ProductModule {
+  /** Renders the product for the catch-all segments after /p/<slug>. */
+  readonly default: ComponentType<{ path: readonly string[]; apiBaseUrl: string }>;
+  /** null = the product has no such page (the portal answers 404). */
+  readonly matchRoute: (path: readonly string[]) => unknown;
 }
 
 export const products: readonly ProductEntry[] = [
@@ -212,8 +224,9 @@ export const products: readonly ProductEntry[] = [
     core: ["ranked choice", "minimax regret"],
     tags: ["groups"],
     profiles: ["ROOM"],
-    status: "NOT_STARTED",
+    status: "IN_PROGRESS",
     wave: "1",
+    load: () => import("@algohub/p15"),
   },
   {
     id: "P16",

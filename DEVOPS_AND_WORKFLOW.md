@@ -40,10 +40,21 @@ just verify       # lint + typecheck + test + next build — всё, что CI �
 schema `platform`, version table `platform.alembic_version`), затем миграции продуктов. `just e2e` (без ID) —
 портальный smoke: Playwright против `next build && next start` на :3100, проекты desktop и mobile (375×812), axe
 serious/critical, проверка security headers; API в браузере перехватывается (`page.route`) — это помечено в тестах.
-Первый запуск скачивает Chromium (`playwright install chromium`). `just e2e P15` честно печатает NOT RUN, пока нет
-`compose.ci.yml` и Dockerfile'ов (Фаза 2). CI: job `e2e-smoke`. `E2E_BROWSER_CHANNEL=chrome just e2e` — то же на
+Первый запуск скачивает Chromium (`playwright install chromium`). CI: job `e2e-smoke`. `E2E_BROWSER_CHANNEL=chrome just e2e` — то же на
 установленном Google Chrome без скачивания Chromium. `just purge-waitlist` — удаляет записи `platform.waitlist`
 старше 365 дней (нужна БД; до появления worker в P31 запускается вручную/cron).
+
+Фаза 2 (2026-11-13, P15): `just e2e P15` — happy path продукта против `docker compose -f infra/compose/compose.ci.yml
+up -d --build --wait` (postgres на tmpfs → одноразовый `migrate` → `api` + `web` из `infra/docker/Dockerfile.{api,web}`,
+порты 8000/3000, `ALGOHUB_FLAGS=preview:P15`), Playwright-конфиг `apps/portal-web/playwright.products.config.ts`,
+сценарии из `products/p15-nomoredebate/scenarios/*.json` (`ui.steps`); без Docker — `NOT RUN` (exit 2); CI: job
+`e2e-p15`. `just e2e-preview P15` — тот же spec против нативного стека без Docker (API на in-memory хранилище
+`algo_api.preview` + `next start`): локальная проверка UI, **не** засчитывается в DoD. `just preview` — то же для
+ручной работы (данные теряются при перезапуске). `just purge P15` — retention продукта (`algohub_p15.retention`).
+`just openapi` перегенерирует и снапшот, и типы `@algohub/api-client`. `just dod <ID>` теперь выполняет проверки
+(lint, typecheck, тесты продукта, наборы `python/algorithms`, контракт) и честно печатает `NOT RUN` для
+интеграции/e2e/axe без Docker; `--static` — только файловые проверки. Флаг `ALGOHUB_FLAGS=preview:<ID>` открывает
+UI продукта ниже `MVP_READY` с видимой плашкой «Предварительная версия».
 
 **Docker Compose** (`infra/compose/docker-compose.yml`): `postgres:16` (с init-скриптом, создающим schemas `platform`, и по одной на продукт — из списка в `services/algo-api/products.py`), `umami` (аналитика, опционально, профиль `analytics`), `algo-api`, `algo-worker`, `portal-web` (в dev фронт обычно запускается нативно ради HMR; в compose — для e2e). `compose.ci.yml` — те же сервисы с фиксированными портами и `healthcheck`, на которые ждёт Playwright.
 

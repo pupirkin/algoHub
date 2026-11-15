@@ -82,22 +82,102 @@ export function checkEnvExample(root: string): CheckResult {
     : fail(".env.example", "missing at repo root");
 }
 
-/**
- * Checks that need to run toolchains (lint/typecheck/tests/contract/e2e/axe). In the Phase 0 skeleton
- * they are reported honestly as NOT_RUN; Phase 2 (P15) wires them to `just test <ID>` / `just e2e <ID>`.
- */
-export const PENDING_EXECUTION_CHECKS = [
-  "lint + typecheck",
-  "unit + property tests",
-  "algorithm tests (oracle/props/golden/budget)",
-  "contract snapshot current",
-  "integration with real Postgres",
-  "Playwright happy path vs compose",
-  "axe on happy-path screens",
-] as const;
+export const ALGORITHM_TEST_KINDS = ["oracle", "props", "golden", "budget"] as const;
 
-export function pendingExecutionChecks(): CheckResult[] {
-  return PENDING_EXECUTION_CHECKS.map((n) => notRun(n, "not wired yet (dod skeleton, Phase 0)"));
+function listFiles(dir: string, out: string[] = []): string[] {
+  if (!existsSync(dir)) return out;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) listFiles(full, out);
+    else out.push(full);
+  }
+  return out;
+}
+
+/**
+ * TESTING_STRATEGY §2: every algorithm has oracle, property, golden and budget tests (`test_*_<kind>.py|ts`).
+ * Golden tests must live in the product (they read its scenarios); the other kinds may live with a shared kernel
+ * in python/algorithms/tests.
+ */
+export function checkAlgorithmTests(root: string, productDir: string): CheckResult {
+  const name = "algorithm tests present (oracle/props/golden/budget)";
+  const re = (kind: string) => new RegExp(`(^|/)test_[a-z0-9_]+_${kind}\\.(py|ts)$`);
+  const product = listFiles(productDir);
+  const shared = listFiles(join(root, "python", "algorithms", "tests"));
+  const missing = ALGORITHM_TEST_KINDS.filter((kind) => {
+    const pool = kind === "golden" ? product : [...product, ...shared];
+    return !pool.some((f) => re(kind).test(f.replaceAll("\\", "/")));
+  });
+  return missing.length === 0
+    ? pass(name, ALGORITHM_TEST_KINDS.join(", ") + " found")
+    : fail(name, `missing: ${missing.join(", ")}`);
+}
+
+/** registry.ts status must equal the `Status:` line of the product's STATUS.md (ARCHITECTURE_PLAN §10 drift). */
+export function checkStatusConsistency(registrySource: string, id: string, productDir: string): CheckResult {
+  const name = "status: registry.ts == STATUS.md";
+  const block = new RegExp(`id: "${id.toUpperCase()}"[\\s\\S]*?status: "([A-Z_]+)"`).exec(registrySource);
+  const path = join(productDir, "docs", "STATUS.md");
+  const doc = existsSync(path) ? /^Status:\s*([A-Z_]+)/m.exec(readFileSync(path, "utf8")) : null;
+  if (block?.[1] === undefined || doc?.[1] === undefined)
+    return fail(name, "status not found in registry.ts or STATUS.md");
+  return block[1] === doc[1] ? pass(name, block[1]) : fail(name, `registry ${block[1]} != STATUS.md ${doc[1]}`);
+}
+
+/** A check that runs commands from the repo root; `needsDocker` ones are NOT_RUN without a Docker daemon. */
+export interface ExecCheck {
+  readonly name: string;
+  readonly commands: readonly (readonly string[])[];
+  readonly needsDocker: boolean;
+  /** Reuse another check's outcome instead of running anything (e.g. axe runs inside the e2e spec). */
+  readonly sameAs?: string;
+}
+
+export function executionPlan(id: string): ExecCheck[] {
+  const pid = id.toUpperCase();
+  return [
+    {
+      name: "lint + typecheck",
+      commands: [
+        ["just", "lint"],
+        ["just", "typecheck"],
+      ],
+      needsDocker: false,
+    },
+    { name: "unit + property tests (product)", commands: [["just", "test", pid]], needsDocker: false },
+    {
+      name: "algorithm suites (python/algorithms)",
+      commands: [["uv", "run", "pytest", "python/algorithms", "-q"]],
+      needsDocker: false,
+    },
+    {
+      name: "contract snapshot + api-client current",
+      commands: [
+        ["uv", "run", "python", "-m", "algo_api.export_openapi", "--check"],
+        ["pnpm", "--silent", "--filter", "@algohub/api-client", "exec", "tsx", "src/generate.ts", "--check"],
+      ],
+      needsDocker: false,
+    },
+    { name: "integration with real Postgres", commands: [["just", "test-int"]], needsDocker: true },
+    { name: "Playwright happy path vs compose", commands: [["just", "e2e", pid]], needsDocker: true },
+    {
+      name: "axe on happy-path screens",
+      commands: [],
+      needsDocker: true,
+      sameAs: "Playwright happy path vs compose",
+    },
+  ];
+}
+
+export function notRunWithoutDocker(check: ExecCheck): CheckResult {
+  return notRun(check.name, "docker is not available — runs in CI (test-py / e2e-p15)");
+}
+
+export function commandOutcome(check: ExecCheck, exitCodes: readonly number[], seconds: number): CheckResult {
+  const failed = exitCodes.findIndex((c) => c !== 0);
+  if (failed === -1) return pass(check.name, `${check.commands.map((c) => c.join(" ")).join(" && ")} (${seconds}s)`);
+  return fail(check.name, `\`${check.commands[failed]!.join(" ")}\` exited ${exitCodes[failed]}`);
 }
 
 export type Verdict = "GREEN" | "RED" | "INCOMPLETE";

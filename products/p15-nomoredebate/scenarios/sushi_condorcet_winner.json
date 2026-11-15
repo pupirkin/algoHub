@@ -1,0 +1,40 @@
+{
+  "name": "sushi_condorcet_winner",
+  "profile": "ROOM",
+  "description": "Пример из TESTING_STRATEGY §2.3: Sushi выигрывает обе дуэли 2:1 — это победитель по Кондорсе (а не ничья, как подписано в примере стратегии).",
+  "input": {
+    "question": "Что заказываем?",
+    "options": ["Pizza", "Sushi", "Burgers"],
+    "method": "condorcet_borda",
+    "seed": "golden-sushi",
+    "voters": ["Ann", "Bo", "Cy"],
+    "ballots": [
+      [0, 1, 2],
+      [1, 0, 2],
+      [2, 1, 0]
+    ]
+  },
+  "expected": {
+    "outcome": "winner",
+    "winner": "Sushi",
+    "tied": [],
+    "tiebreak_pick": null,
+    "decided_by": "condorcet",
+    "condorcet_winner": "Sushi",
+    "borda_points": { "Pizza": 3, "Sushi": 4, "Burgers": 2 },
+    "explain_codes": ["condorcet_winner"]
+  },
+  "ui": {
+    "steps": [
+      "create_room",
+      "join:Ann",
+      "vote:Ann",
+      "join:Bo",
+      "vote:Bo",
+      "join:Cy",
+      "vote:Cy",
+      "close",
+      "assert_result"
+    ]
+  }
+}

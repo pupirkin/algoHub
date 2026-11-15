@@ -1,0 +1,25 @@
+{
+  "name": "minimax_regret_nobody_unhappy",
+  "profile": "ROOM",
+  "description": "Ни у кого B не ниже второго места: минимальное «максимальное сожаление» = 1.",
+  "input": {
+    "question": "Какой фильм смотрим?",
+    "options": ["A", "B", "C", "D"],
+    "method": "minimax_regret",
+    "seed": "golden-regret",
+    "ballots": [
+      [0, 1, 2, 3],
+      [3, 1, 2, 0],
+      [2, 1, 0, 3]
+    ]
+  },
+  "expected": {
+    "outcome": "winner",
+    "winner": "B",
+    "tied": [],
+    "tiebreak_pick": null,
+    "decided_by": "minimax_regret",
+    "regrets": { "A": [3, 5], "B": [1, 3], "C": [2, 4], "D": [3, 6] },
+    "explain_codes": ["minimax_regret_top"]
+  }
+}

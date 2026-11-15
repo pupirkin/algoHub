@@ -1,0 +1,35 @@
+{
+  "name": "irv_eliminates_compromise",
+  "profile": "ROOM",
+  "description": "Те же бюллетени, метод «как на выборах» (IRV): у B меньше всего первых мест, B выбывает, его голоса уходят к C, C набирает 5 из 9.",
+  "input": {
+    "question": "Куда едем в выходные?",
+    "options": ["A", "B", "C"],
+    "method": "irv",
+    "seed": "golden-compromise",
+    "ballots": [
+      [0, 1, 2],
+      [0, 1, 2],
+      [0, 1, 2],
+      [0, 1, 2],
+      [2, 1, 0],
+      [2, 1, 0],
+      [2, 1, 0],
+      [1, 2, 0],
+      [1, 2, 0]
+    ]
+  },
+  "expected": {
+    "outcome": "winner",
+    "winner": "C",
+    "tied": [],
+    "tiebreak_pick": null,
+    "decided_by": "irv",
+    "condorcet_winner": "B",
+    "irv_rounds": [
+      { "counts": { "A": 4, "B": 2, "C": 3 }, "exhausted": 0, "eliminated": "B" },
+      { "counts": { "A": 4, "C": 5 }, "exhausted": 0, "eliminated": null }
+    ],
+    "explain_codes": ["irv_majority"]
+  }
+}

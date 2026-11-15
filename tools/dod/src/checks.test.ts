@@ -3,12 +3,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  checkAlgorithmTests,
+  checkStatusConsistency,
+  commandOutcome,
+  executionPlan,
   checkDocs,
   checkRegistry,
   checkScenarios,
   checkStatusDoc,
   findProductDir,
-  pendingExecutionChecks,
   REQUIRED_DOCS,
   renderTable,
   verdict,
@@ -63,8 +66,46 @@ describe("dod checks", () => {
   it("verdict: NOT_RUN never yields GREEN", () => {
     const passing = [{ name: "a", outcome: "PASS" as const, detail: "" }];
     expect(verdict(passing)).toBe("GREEN");
-    expect(verdict([...passing, ...pendingExecutionChecks()])).toBe("INCOMPLETE");
+    expect(verdict([...passing, { name: "e2e", outcome: "NOT_RUN", detail: "no docker" }])).toBe("INCOMPLETE");
     expect(verdict([...passing, { name: "b", outcome: "FAIL", detail: "" }])).toBe("RED");
     expect(renderTable("p15", passing)).toContain("Verdict: GREEN");
+  });
+
+  it("requires all four algorithm test kinds, golden inside the product", () => {
+    const { root, dir } = fixture();
+    expect(checkAlgorithmTests(root, dir).outcome).toBe("FAIL");
+    mkdirSync(join(root, "python", "algorithms", "tests"), { recursive: true });
+    for (const kind of ["oracle", "props", "budget", "golden"]) {
+      writeFileSync(join(root, "python", "algorithms", "tests", `test_x_${kind}.py`), "");
+    }
+    const shared = checkAlgorithmTests(root, dir);
+    expect(shared.outcome).toBe("FAIL"); // golden in the shared kernel does not count
+    expect(shared.detail).toBe("missing: golden");
+    mkdirSync(join(dir, "api", "tests"), { recursive: true });
+    writeFileSync(join(dir, "api", "tests", "test_scenarios_golden.py"), "");
+    expect(checkAlgorithmTests(root, dir).outcome).toBe("PASS");
+  });
+
+  it("compares the registry status with STATUS.md", () => {
+    const { dir } = fixture();
+    writeFileSync(join(dir, "docs", "STATUS.md"), "# s\n\nStatus: IN_PROGRESS\nUpdated: 2026-11-13\n");
+    const registry = 'id: "P99",\n    slug: "x",\n    status: "IN_PROGRESS",';
+    expect(checkStatusConsistency(registry, "P99", dir).outcome).toBe("PASS");
+    expect(checkStatusConsistency(registry.replace("IN_PROGRESS", "MVP_READY"), "P99", dir).detail).toBe(
+      "registry MVP_READY != STATUS.md IN_PROGRESS",
+    );
+  });
+
+  it("plans docker checks honestly and maps exit codes", () => {
+    const plan = executionPlan("p15");
+    expect(plan.filter((c) => c.needsDocker).map((c) => c.name)).toEqual([
+      "integration with real Postgres",
+      "Playwright happy path vs compose",
+      "axe on happy-path screens",
+    ]);
+    expect(plan.find((c) => c.name.startsWith("unit"))?.commands).toEqual([["just", "test", "P15"]]);
+    const lint = plan[0]!;
+    expect(commandOutcome(lint, [0, 0], 3).outcome).toBe("PASS");
+    expect(commandOutcome(lint, [0, 2], 3)).toMatchObject({ outcome: "FAIL", detail: "`just typecheck` exited 2" });
   });
 });

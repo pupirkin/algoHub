@@ -6,6 +6,12 @@
 ## [Unreleased]
 
 ### Added
+- Фаза 2 (P15): `algorithms.social_choice`; `shared_kernel.provenance`; `ProductMount.setup` в `algo-api`;
+  `@algohub/api-client` (openapi-typescript + openapi-fetch, тест на дрейф); портал грузит продукт через
+  `registry.load()` (статус ≥ `MVP_READY` или `ALGOHUB_FLAGS=preview:<ID>`), Tailwind `@source` для продуктов;
+  `infra/docker/Dockerfile.{api,web}`, `infra/compose/compose.ci.yml`, CI job `e2e-p15`; `just e2e <ID>`,
+  `just e2e-preview <ID>`, `just preview`, `just purge <ID>`; `just dod` выполняет проверки (интеграция/e2e — NOT RUN
+  без Docker); `algo_api.preview` (in-memory, только локально); schemathesis в dev-зависимостях.
 - Фаза 1 «Портал»: `registry.ts` с tagline/purpose/core/tags для 32 продуктов (сверка с `PROJECT_CATALOG.md`
   тестом); каталог с клиентским поиском (AND по токенам, ё=е, грубый стемминг; fast-check свойства) и карточками
   статусов; лендинг `/p/<slug>` для статусов ниже `MVP_READY` с формой «Сообщить, когда готово»; `next-intl`

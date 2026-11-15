@@ -55,6 +55,15 @@ describe("registry", () => {
     }
   });
 
+  it("only products with a web package have a loader, and it exposes the product contract", async () => {
+    const loadable = products.filter((p) => p.load !== undefined).map((p) => p.id);
+    expect(loadable).toEqual(["P15"]);
+    const mod = await findProductBySlug("nomoredebate")!.load!();
+    expect(typeof mod.default).toBe("function");
+    expect(mod.matchRoute([])).not.toBeNull();
+    expect(mod.matchRoute(["nope"])).toBeNull();
+  });
+
   it("no product claims a dod-gated status while no product directory exists", () => {
     for (const p of products) expect(["MVP_READY", "LIVE"]).not.toContain(p.status);
   });

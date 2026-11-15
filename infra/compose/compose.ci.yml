@@ -1,0 +1,60 @@
+# e2e stack (DEVOPS_AND_WORKFLOW §1, TESTING_STRATEGY §5): Postgres -> migrations -> algo-api + portal-web, fixed
+# ports and healthchecks; `docker compose -f infra/compose/compose.ci.yml up -d --build --wait`.
+# Throwaway data (tmpfs). The password is a CI placeholder, not a secret (same as .github/workflows/ci.yml).
+name: algohub-ci
+
+x-db-url: &db-url postgresql+psycopg://algohub:ci-only-not-a-secret@postgres:5432/algohub
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: algohub
+      POSTGRES_PASSWORD: ci-only-not-a-secret
+      POSTGRES_DB: algohub
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U algohub -d algohub"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    build: { context: ../.., dockerfile: infra/docker/Dockerfile.api }
+    image: algohub/algo-api:ci
+    command: ["migrate"]
+    environment:
+      ALGOHUB_DATABASE_URL: *db-url
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    image: algohub/algo-api:ci
+    environment:
+      ALGOHUB_ENV: test
+      ALGOHUB_DATABASE_URL: *db-url
+      ALGOHUB_CORS_ORIGINS: http://localhost:3000
+      ALGOHUB_LOG_JSON: "true"
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    image: algohub/portal-web:ci
+    environment:
+      # Product UIs below MVP_READY are only reachable with an explicit preview flag (visible notice).
+      ALGOHUB_FLAGS: preview:P15
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      api: { condition: service_healthy }

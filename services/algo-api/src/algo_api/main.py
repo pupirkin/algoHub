@@ -64,5 +64,7 @@ def create_app(
     app.state.waitlist_limiters = waitlist.new_limiters()
     app.include_router(waitlist.router)
     for mount in mounts if mounts is not None else product_mounts():
+        if mount.setup is not None:
+            mount.setup(app, db_engine)
         app.include_router(mount.router, prefix=mount.prefix)
     return app

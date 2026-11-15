@@ -12,9 +12,11 @@
     "app",
     "src",
     "e2e",
+    "e2e-products",
     "next.config.ts",
     "middleware.ts",
     "playwright.config.ts",
+    "playwright.products.config.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules"]

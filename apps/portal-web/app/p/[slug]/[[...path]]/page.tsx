@@ -5,33 +5,64 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { STATUS_BADGE_VARIANT } from "@/catalog/status";
 import { SiteShell } from "@/layout/site-shell";
-import { findProductBySlug, isLaunched, type ProductEntry } from "@/registry";
+import { isPreviewEnabled } from "@/config/flags";
+import { apiBaseUrl } from "@/config/public";
+import { findProductBySlug, isLaunched, type ProductEntry, type ProductModule } from "@/registry";
 import { WaitlistForm } from "@/waitlist/waitlist-form";
 
 interface Params {
   params: Promise<{ slug: string; path?: string[] }>;
 }
 
+type Resolved =
+  | { kind: "landing"; product: ProductEntry }
+  | { kind: "product"; product: ProductEntry; module: ProductModule; path: string[] };
+
 /**
- * Product entry point (ARCHITECTURE_PLAN §4). Below MVP_READY it renders the honest landing page;
- * the first product web slice (P15) adds the branch that loads the product via `registry.load()`.
+ * Product entry point (ARCHITECTURE_PLAN §4). A product with a web package is served through `registry.load()`
+ * once it is launched (MVP_READY+) or when `ALGOHUB_FLAGS=preview:<ID>` is set (with a visible preview notice);
+ * otherwise the honest landing page. Unknown products and unknown sub-pages are 404.
  */
-async function resolve(params: Params["params"]): Promise<ProductEntry> {
-  const { slug, path } = await params;
+async function resolve(params: Params["params"]): Promise<Resolved> {
+  const { slug, path = [] } = await params;
   const product = findProductBySlug(slug);
-  // No launched product exists yet, so there are no sub-pages: /p/<slug>/<anything> is a 404.
-  if (product === undefined || (path !== undefined && path.length > 0) || isLaunched(product)) notFound();
-  return product;
+  if (product === undefined) notFound();
+  if (product.load !== undefined && (isLaunched(product) || isPreviewEnabled(product.id))) {
+    const productModule = await product.load();
+    if (productModule.matchRoute(path) === null) notFound();
+    return { kind: "product", product, module: productModule, path };
+  }
+  if (path.length > 0 || isLaunched(product)) notFound();
+  return { kind: "landing", product };
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const p = await resolve(params);
+  const { product: p } = await resolve(params);
   return { title: p.title, description: p.tagline };
 }
 
 export default async function ProductPage({ params }: Params) {
-  const p = await resolve(params);
+  const resolved = await resolve(params);
   const t = await getTranslations();
+  const p = resolved.product;
+  if (resolved.kind === "product") {
+    const Product = resolved.module.default;
+    return (
+      <SiteShell>
+        <Link href="/" className="text-sm underline underline-offset-4">
+          {t("common.backToCatalog")}
+        </Link>
+        {isLaunched(p) ? null : (
+          <p role="note" className="mt-4 max-w-prose rounded-md border border-border bg-muted p-3 text-sm">
+            {t("landing.preview", { status: t(`status.${p.status}`) })}
+          </p>
+        )}
+        <div className="mt-6">
+          <Product path={resolved.path} apiBaseUrl={apiBaseUrl()} />
+        </div>
+      </SiteShell>
+    );
+  }
   return (
     <SiteShell>
       <Link href="/" className="text-sm underline underline-offset-4">

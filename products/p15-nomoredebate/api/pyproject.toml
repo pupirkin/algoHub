@@ -1,0 +1,22 @@
+[project]
+name = "algohub-p15"
+version = "0.1.0"
+description = "P15 NoMoreDebate API: rooms, ranked ballots and explained group decisions (schema p15)."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "alembic==1.20.1",
+    "algohub-algorithms",
+    "algohub-shared-kernel",
+    "fastapi==0.162.5",
+]
+
+[tool.uv.sources]
+algohub-algorithms = { workspace = true }
+algohub-shared-kernel = { workspace = true }
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "algohub_p15"

@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const config: NextConfig = {
   // Workspace packages are shipped as TypeScript source (ARCHITECTURE_PLAN §10).
-  transpilePackages: ["@algohub/ui", "@algohub/core"],
+  transpilePackages: ["@algohub/ui", "@algohub/core", "@algohub/api-client", "@algohub/p15"],
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,

@@ -18,7 +18,9 @@ test.describe("home / catalog", () => {
     const cards = page.getByTestId("catalog-list").getByRole("listitem");
     await expect(cards).toHaveCount(32);
     await expect(page.getByText("Готово к использованию: 0 из 32.")).toBeVisible();
-    await expect(page.getByTestId("catalog-list").getByText("Не начат")).toHaveCount(32);
+    // Statuses come from registry.ts: P15 is in progress, everything else not started.
+    await expect(page.getByTestId("catalog-list").getByText("Не начат")).toHaveCount(31);
+    await expect(page.getByTestId("catalog-list").getByText("В разработке")).toHaveCount(1);
     await expectNoSeriousA11yViolations(page);
     expect(consoleErrors).toEqual([]);
   });
