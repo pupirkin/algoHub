@@ -89,7 +89,8 @@ for (const sc of SCENARIOS) {
       if (kind === "create_room") {
         await page.goto("/p/nomoredebate");
         await expect(page.getByRole("heading", { name: "Новое голосование" })).toBeVisible();
-        await expect(page.getByRole("note")).toContainText("Предварительная версия");
+        // P15 is MVP_READY (dod GREEN): served as launched, no preview note.
+        await expect(page.getByRole("note")).toHaveCount(0);
         await checkA11y(page);
         await page.getByLabel("Вопрос").fill(sc.input.question);
         for (const [i, label] of sc.input.options.entries()) {

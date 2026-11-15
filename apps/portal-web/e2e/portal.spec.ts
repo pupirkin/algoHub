@@ -17,10 +17,10 @@ test.describe("home / catalog", () => {
     await expect(page.getByRole("heading", { level: 1, name: "AlgoHub" })).toBeVisible();
     const cards = page.getByTestId("catalog-list").getByRole("listitem");
     await expect(cards).toHaveCount(32);
-    await expect(page.getByText("Готово к использованию: 0 из 32.")).toBeVisible();
-    // Statuses come from registry.ts: P15 is in progress, everything else not started.
+    await expect(page.getByText("Готово к использованию: 1 из 32.")).toBeVisible();
+    // Statuses come from registry.ts: P15 passed dod (MVP_READY), everything else not started.
     await expect(page.getByTestId("catalog-list").getByText("Не начат")).toHaveCount(31);
-    await expect(page.getByTestId("catalog-list").getByText("В разработке")).toHaveCount(1);
+    await expect(page.getByTestId("catalog-list").getByText("MVP готов")).toHaveCount(1);
     await expectNoSeriousA11yViolations(page);
     expect(consoleErrors).toEqual([]);
   });
@@ -61,22 +61,32 @@ test.describe("home / catalog", () => {
 
   test("a card opens the product landing", async ({ page, consoleErrors }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Подробнее о NoMoreDebate" }).click();
-    await expect(page).toHaveURL(/\/p\/nomoredebate$/);
-    await expect(page.getByRole("heading", { level: 1, name: "NoMoreDebate" })).toBeVisible();
+    await page.getByRole("link", { name: "Подробнее о ShiftFair" }).click();
+    await expect(page).toHaveURL(/\/p\/shiftfair$/);
+    await expect(page.getByRole("heading", { level: 1, name: "ShiftFair" })).toBeVisible();
+    expect(consoleErrors).toEqual([]);
+  });
+
+  test("a launched product (MVP_READY) is served without the preview note", async ({ page, consoleErrors }) => {
+    const response = await page.goto("/p/nomoredebate");
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1, name: "Новое голосование" })).toBeVisible();
+    await expect(page.getByRole("note")).toHaveCount(0);
+    await expect(page.getByText("Этого продукта пока нет")).toHaveCount(0);
+    await expectNoSeriousA11yViolations(page);
     expect(consoleErrors).toEqual([]);
   });
 });
 
 test.describe("product landing /p/<slug>", () => {
   test("is honest about status and accessible", async ({ page, consoleErrors }) => {
-    const response = await page.goto("/p/nomoredebate");
+    const response = await page.goto("/p/shiftfair");
     expect(response?.status()).toBe(200);
     expect(response!.headers()["content-security-policy"]).toContain("connect-src 'self' http://127.0.0.1:8000");
     await expect(page.getByText("Этого продукта пока нет")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Какую задачу решает" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Как будет работать" })).toBeVisible();
-    await expect(page.getByText("ranked choice, minimax regret")).toBeVisible();
+    await expect(page.getByText("CP-SAT, ILP")).toBeVisible();
     await expectNoSeriousA11yViolations(page);
     expect(consoleErrors).toEqual([]);
   });
@@ -92,11 +102,11 @@ test.describe("product landing /p/<slug>", () => {
         body: JSON.stringify({ status: "accepted" }),
       });
     });
-    await page.goto("/p/nomoredebate");
+    await page.goto("/p/shiftfair");
     await page.getByLabel("Email").fill("user@example.com");
     await page.getByRole("button", { name: "Сообщить, когда готово" }).click();
-    await expect(page.getByRole("status")).toHaveText("Готово! Напишем, когда NoMoreDebate запустится.");
-    expect(sent).toEqual({ product_id: "P15", email: "user@example.com" });
+    await expect(page.getByRole("status")).toHaveText("Готово! Напишем, когда ShiftFair запустится.");
+    expect(sent).toEqual({ product_id: "P31", email: "user@example.com" });
     await expectNoSeriousA11yViolations(page);
     expect(consoleErrors).toEqual([]);
   });
@@ -133,7 +143,7 @@ test.describe("product landing /p/<slug>", () => {
   });
 
   test("unknown product and sub-paths are 404", async ({ page }) => {
-    for (const path of ["/p/does-not-exist", "/p/nomoredebate/room/1"]) {
+    for (const path of ["/p/does-not-exist", "/p/shiftfair/room/1", "/p/nomoredebate/room/1"]) {
       const response = await page.goto(path);
       expect(response?.status(), path).toBe(404);
       await expect(page.getByRole("heading", { level: 1, name: "Страница не найдена" })).toBeVisible();
@@ -149,14 +159,14 @@ test.describe("waitlist without JavaScript", () => {
     page.on("request", (r) => {
       if (r.url().includes("example.com") || r.url().includes("email=")) leaked.push(r.url());
     });
-    await page.goto("/p/nomoredebate");
+    await page.goto("/p/shiftfair");
     const input = page.getByLabel("Email");
     await input.fill("user@example.com");
     await input.press("Enter");
     await page.getByRole("button", { name: "Сообщить, когда готово" }).click({ force: true });
     await page.waitForLoadState("networkidle");
     expect(leaked).toEqual([]);
-    await expect(page).toHaveURL(/\/p\/nomoredebate$/);
+    await expect(page).toHaveURL(/\/p\/shiftfair$/);
     expect(page.url()).not.toContain("email");
     expect(page.url()).not.toContain("example.com");
   });

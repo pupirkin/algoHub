@@ -5,6 +5,11 @@
 
 ## [Unreleased]
 
+### Fixed
+- `tools/index-sync`: typecheck с профилем `tsconfig.react.json` (registry.ts лениво импортирует `.tsx` продуктов);
+  тест рендера проверяет точные строки на фикстуре, а на реальном реестре — только инварианты (не ломается при смене
+  статусов). Smoke портала: лендинг проверяется на P31 ShiftFair, P15 (`MVP_READY`) — без preview-плашки.
+
 ### Added
 - Фаза 2 (P15): `algorithms.social_choice`; `shared_kernel.provenance`; `ProductMount.setup` в `algo-api`;
   `@algohub/api-client` (openapi-typescript + openapi-fetch, тест на дрейф); портал грузит продукт через

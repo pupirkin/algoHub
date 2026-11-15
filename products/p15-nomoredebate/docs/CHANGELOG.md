@@ -3,6 +3,10 @@
 All notable changes to this product are documented here (Keep a Changelog).
 
 ## [Unreleased]
+### Changed
+- Status `MVP_READY` (2026-11-15): `just dod P15` GREEN in CI (integration on Postgres 16, compose e2e, axe). The portal
+  serves the product at `/p/nomoredebate` without the preview flag.
+
 ### Added
 - Web UI `@algohub/p15`: create, participant (accessible ranking), organizer and result screens; preview via
   `ALGOHUB_FLAGS=preview:P15`.

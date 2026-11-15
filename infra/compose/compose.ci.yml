@@ -51,9 +51,8 @@ services:
       args:
         NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
     image: algohub/portal-web:ci
-    environment:
-      # Product UIs below MVP_READY are only reachable with an explicit preview flag (visible notice).
-      ALGOHUB_FLAGS: preview:P15
+    # No ALGOHUB_FLAGS: P15 is MVP_READY and served as launched. A product below MVP_READY needs
+    # `environment: { ALGOHUB_FLAGS: "preview:<ID>" }` here to be reachable (with a visible preview notice).
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:

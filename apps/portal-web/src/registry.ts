@@ -224,7 +224,7 @@ export const products: readonly ProductEntry[] = [
     core: ["ranked choice", "minimax regret"],
     tags: ["groups"],
     profiles: ["ROOM"],
-    status: "IN_PROGRESS",
+    status: "MVP_READY",
     wave: "1",
     load: () => import("@algohub/p15"),
   },

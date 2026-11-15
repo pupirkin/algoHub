@@ -64,8 +64,15 @@ describe("registry", () => {
     expect(mod.matchRoute(["nope"])).toBeNull();
   });
 
-  it("no product claims a dod-gated status while no product directory exists", () => {
-    for (const p of products) expect(["MVP_READY", "LIVE"]).not.toContain(p.status);
+  it("a dod-gated status (MVP_READY, LIVE) needs a web package and the same status in STATUS.md", () => {
+    for (const p of products.filter((x) => x.status === "MVP_READY" || x.status === "LIVE")) {
+      expect(p.load, p.id).toBeDefined();
+      const statusMd = readFileSync(
+        fileURLToPath(new URL(`../../../products/${p.id.toLowerCase()}-${p.slug}/docs/STATUS.md`, import.meta.url)),
+        "utf8",
+      );
+      expect(/^Status: (\S+)$/m.exec(statusMd)?.[1], p.id).toBe(p.status);
+    }
   });
 
   it("finds products by slug and knows which are launched", () => {

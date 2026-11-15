@@ -46,7 +46,8 @@ serious/critical, проверка security headers; API в браузере п�
 
 Фаза 2 (2026-11-13, P15): `just e2e P15` — happy path продукта против `docker compose -f infra/compose/compose.ci.yml
 up -d --build --wait` (postgres на tmpfs → одноразовый `migrate` → `api` + `web` из `infra/docker/Dockerfile.{api,web}`,
-порты 8000/3000, `ALGOHUB_FLAGS=preview:P15`), Playwright-конфиг `apps/portal-web/playwright.products.config.ts`,
+порты 8000/3000; продукт ниже `MVP_READY` добавляет `web` флаг `ALGOHUB_FLAGS=preview:<ID>`, P15 с 2026-11-15
+без флага), Playwright-конфиг `apps/portal-web/playwright.products.config.ts`,
 сценарии из `products/p15-nomoredebate/scenarios/*.json` (`ui.steps`); без Docker — `NOT RUN` (exit 2); CI: job
 `e2e-p15`. `just e2e-preview P15` — тот же spec против нативного стека без Docker (API на in-memory хранилище
 `algo_api.preview` + `next start`): локальная проверка UI, **не** засчитывается в DoD. `just preview` — то же для
