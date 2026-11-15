@@ -1,20 +1,19 @@
 # BUILD_STATE
 
-- Updated: 2026-11-13
-- Phase: **2 «P15 NoMoreDebate» — in progress** on branch `feat/p15-nomoredebate`, stacked on `feat/portal-catalog`
-  (PR #7, CI green on `f174b99`, **not merged yet** — owner merges). After #7 is squash-merged: `git merge main` into
-  this branch (no rebase, no force-push), then PR `feat(p15): NoMoreDebate MVP` → `main`.
-- P15 status: `IN_PROGRESS` (registry + STATUS.md). `just dod P15` = **INCOMPLETE**: everything that runs without
-  Docker is ✅; integration, compose e2e and axe-vs-compose are NOT RUN here. MVP_READY only after a green dod
-  (i.e. after CI `test-py` + `e2e-p15` are green and dod runs where Docker exists).
-- Products: 32 in registry; 1 with code (`products/p15-nomoredebate`: api + web + docs + 7 scenarios).
-  Sessions without changes in `products/`: reset to 0.
+- Updated: 2026-11-15
+- Phase: **2 «P15 NoMoreDebate» — done (MVP_READY)**, waiting for the owner to squash-merge **PR #7**
+  (`feat/portal-catalog` → `main`). Git reality (verified via GitHub API 2026-11-15): PR #8 (`feat/p15-nomoredebate`)
+  was squash-merged into `feat/portal-catalog` (`a0d632c`), **not** into `main`; PR #7 is still open and now carries
+  Phase 1 (portal) + Phase 2 (P15). `origin/main` = `e13be36` (scaffold). `feat/p15-nomoredebate` is obsolete.
+- P15 status: **`MVP_READY`** (registry + STATUS.md) — set only after `just dod P15` was GREEN in CI (run
+  43686028535 on `37ceef1`); re-confirmed GREEN in launched mode (no preview flag) on `d7f53db` (run 43686736830).
+- Products: 32 in registry; 1 with code (`products/p15-nomoredebate`). Sessions without changes in `products/`: 0.
 
 ## What exists
 
 | Area | State |
 |---|---|
-| **P15 NoMoreDebate** | `python/algorithms/social_choice` (Condorcet, Borda over partial ballots, IRV, minimax regret, seeded tie-break, `explain`); `products/p15-nomoredebate/api` (`algohub_p15`: schema `p15` + migration 0001, capability tokens, rate limits, lazy deadlines, retention 30 d, SQL + in-memory stores, `/api/v1/p15` 8 endpoints); `products/p15-nomoredebate/web` (`@algohub/p15`: 4 screens, accessible ranking, 3 s polling); 7 golden scenarios; docs 7/7 |
+| **P15 NoMoreDebate** (`MVP_READY`) | `python/algorithms/social_choice` (Condorcet, Borda over partial ballots, IRV, minimax regret, seeded tie-break, `explain`); `products/p15-nomoredebate/api` (`algohub_p15`: schema `p15` + migration 0001, capability tokens, rate limits, lazy deadlines, retention 30 d, SQL + in-memory stores, `/api/v1/p15` 8 endpoints); `products/p15-nomoredebate/web` (`@algohub/p15`: 4 screens, accessible ranking, 3 s polling); 7 golden scenarios; docs 7/7 |
 | Platform (Phase 2) | `@algohub/api-client` (generated); `shared_kernel.provenance`; `ProductMount.setup`; `registry.load()` branch in `/p/[slug]` gated by status or `ALGOHUB_FLAGS=preview:<ID>`; `infra/docker/Dockerfile.{api,web}`, `infra/compose/compose.ci.yml`; CI job `e2e-p15`; executable `just dod`; `algo_api.preview` (in-memory, local only) |
 | Monorepo | pnpm 12 + Turborepo 2.11; uv workspace (Python 3.12); `justfile` facade |
 | `apps/portal-web` | Next.js 15.5: catalog `/` (client search, status cards), landing `/p/<slug>` (`[[...path]]`, 404 for unknown slugs/sub-paths), `not-found`, `/api/health`, `app/icon.svg`; next-intl 4.14.9 without routing (`messages/ru.json`, typed keys); `middleware.ts` per-request CSP with nonce (all pages `force-dynamic`); static security headers in `next.config.ts` |
@@ -42,7 +41,26 @@ just purge P15 / just purge-waitlist    # retention; need a database
 just index                              # PROJECT_INDEX.md from registry.ts
 ```
 
-## Last verification (2026-11-13, macOS arm64, local, branch `feat/p15-nomoredebate`)
+## Last verification (2026-11-15, branch `feat/portal-catalog`)
+
+| Check | Command | Result |
+|---|---|---|
+| inspect (start, `087a954`) | `just lint` / `typecheck` / `test` | ✅ 4.9s / 2.2s / 15.6s — but **Turbo cache hit 8/8 masked CI failures** (index-sync typecheck + render test). Use `TURBO_FORCE=true` when comparing with CI |
+| CI PR #8 / PR #7 before fixes | GitHub API, runs 43684736421 / 43685553693 | ❌ static (index-sync tsc: `--jsx` not set via registry → `@algohub/p15`), test-ts (render test expected P15 `NOT_STARTED`), dod P15 (same typecheck); ✅ test-py (first Postgres run of P15 integration), e2e-smoke, hygiene |
+| fix `37ceef1` | `TURBO_FORCE=true just verify` | ✅ 40.8s — lint (import-linter 4/0), tsc 8/8 uncached, Vitest p15 56 · portal 58 · core 18 · dod 9 · gen 7 · api-client 5 · ui 4 · index-sync 2, pytest 221 passed / 97 deselected (11.2s), `next build` |
+| contract | `uv run python -m algo_api.export_openapi --check` | ✅ 1s, up to date |
+| e2e portal | `just e2e` | ✅ 22 passed, 2 skipped (21.5s) after landing tests moved to P31 |
+| e2e P15 (preview) | `just e2e-preview P15` | ✅ 8 passed (11.7s) — not the gate |
+| dod local | `just dod P15` | INCOMPLETE 25s: 11 ✅, 3 NOT RUN (integration, compose e2e, axe — **Docker not installed**) |
+| integration local | `just test-int` | **NOT RUN: Docker not installed** (green in CI) |
+| **CI `37ceef1`** | run 43686028535 | ✅ 6/6: static 48s, test-ts 48s, test-py 40s, e2e-smoke 82s, hygiene 4s, **dod P15 188s (step 141s) → GREEN** (exit 0 only on GREEN, `tools/dod/src/main.ts:92`; job log needs auth → not read) |
+| **CI `d7f53db`** (MVP_READY, compose without preview flag) | run 43686736830 | ✅ 6/6: static 40s, test-ts 56s, test-py 45s, e2e-smoke 70s, hygiene 11s, **dod P15 182s → GREEN** |
+| review | `reviewer` subagent | 0 blocker, 2 major (stale BUILD_STATE; gate had not run on `d7f53db` — now recorded above), 4 minor. Fixed in `c4b6011`: launched-status invariant covers VALIDATING, index-sync declares `@algohub/p15` + `@types/react`, STATUS names real CI integration command, `.env.example` dod check is existence-only (recorded, Phase 2.5) |
+| after review | `TURBO_FORCE=true just lint` / `typecheck` / `test` | ✅ 4s / 6s / 18s; pytest 221 passed / 97 deselected; Vitest portal 58, index-sync 2 |
+| CI on final HEAD | PR #7 | reported in the session handoff (docs + review-fix commits after `d7f53db`) |
+
+### History: 2026-11-13 (local, branch `feat/p15-nomoredebate`)
+
 
 | Check | Command | Result |
 |---|---|---|
@@ -68,8 +86,12 @@ just index                              # PROJECT_INDEX.md from registry.ts
 
 ## Known gaps / assumptions
 
-- **P15 never ran against Postgres or in containers.** `store.py` SQL (locks, upsert, ARRAY/JSONB), migration 0001,
-  `Dockerfile.{api,web}`, `compose.ci.yml` are untested until CI runs them. Expect a fix-up commit after the first CI run.
+- P15 Postgres paths, migration 0001, `Dockerfile.{api,web}` and `compose.ci.yml` are verified **in CI only** (no Docker
+  locally); they passed on the first CI run without changes.
+- Local Turbo cache can replay stale green results (`just test`/`typecheck` showed green while CI was red): when local
+  and CI disagree, rerun with `TURBO_FORCE=true`. Candidate for Phase 2.5: `inputs` in `turbo.json` / documented flag.
+- `just dod` checks `.env.example` by existence only (not against `Settings` keys) — strengthen in Phase 2.5.
+- GitHub job logs need auth; public API gives job/step conclusions + annotations only. `gh` is not logged in here.
 - 405 responses list only the first matching route's methods in `Allow` (Starlette; GET and DELETE `/rooms/{id}` are
   separate routes) — schemathesis check excluded with a note; platform fix candidate for Phase 2.5.
 - Product web packages type their own i18n keys (`products/*/web/src/i18n.ts`, `useT`) because the portal's global
@@ -92,7 +114,10 @@ just index                              # PROJECT_INDEX.md from registry.ts
 
 ## Next action
 
-1. Owner: squash-merge PR #7 (`feat/portal-catalog`) into `main`; then `git merge main` into `feat/p15-nomoredebate`.
-2. Push `feat/p15-nomoredebate`, open PR → `main`; fix whatever CI `test-py` (integration) and the `dod P15` job
-   (full `just dod P15` with Docker: integration + compose e2e + axe) find — they have never run. 3. A GREEN `dod P15` CI job is the evidence; only then set
-   `MVP_READY` in registry + STATUS.md (and `just index`). 4. Then Phase 2.5 (generator retrospective).
+1. Owner: squash-merge **PR #7** (`feat/portal-catalog` → `main`; title e.g. `feat: portal catalog + P15 NoMoreDebate MVP`)
+   once its CI on the final HEAD is green; delete `feat/portal-catalog` and the obsolete `feat/p15-nomoredebate`.
+   Owner: switch the GitHub default branch to `main` and enable branch protection.
+2. Phase 2.5 «retrospective → generator»: fold P15 lessons into `just gen` (product i18n typing, Dockerfile.api member
+   list, compose preview flag, dod name conventions, Tailwind `@source`), fix TESTING_STRATEGY §2.3 example, 405 `Allow`,
+   `.env.example` key check in dod, Turbo cache inputs.
+3. Phase 3: P31 ShiftFair (SOLVER, CP-SAT) via the improved generator.

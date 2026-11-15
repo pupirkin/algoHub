@@ -34,6 +34,8 @@ Branch: `feat/portal-catalog` (PR #7 → `main`; PR #8 `feat/p15-nomoredebate` �
   (алгоритм + API; UI + клиент; инфраструктура + e2e + dod). Если владельцу удобнее — PR по одному на коммит.
 
 ## Verification log
+- 2026-11-15 CI run 43686736830 (`d7f53db`, MVP_READY, compose без preview-флага, проверка отсутствия preview-плашки):
+  6/6 jobs ✅ — static 40 s, test-ts 56 s, test-py 45 s, e2e-smoke 70 s, hygiene 11 s, **dod P15 182 s → GREEN**.
 - 2026-11-15 CI run 43686028535 (`37ceef1`, PR #7): 6/6 jobs ✅ — static 48 s, test-ts 48 s, test-py (Postgres 16)
   40 s, e2e-smoke 82 s, commit hygiene 4 s, **dod P15 188 s (шаг `just dod P15` 141 s) → GREEN** → статус `MVP_READY`.
 - 2026-11-15 локально `just verify` без кэша Turbo ✅ (40.8 s): Vitest p15 56, pytest 221 passed / 97 deselected;
