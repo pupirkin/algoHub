@@ -1,5 +1,5 @@
 {
-  "extends": "@algohub/config/tsconfig.library.json",
-  "compilerOptions": { "allowImportingTsExtensions": true },
+  "extends": "@algohub/config/tsconfig.react.json",
+  "compilerOptions": { "types": ["node"], "allowImportingTsExtensions": true },
   "include": ["src"]
 }
