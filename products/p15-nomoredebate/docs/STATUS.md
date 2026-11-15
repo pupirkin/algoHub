@@ -15,7 +15,8 @@ Branch: `feat/portal-catalog` (PR #7 → `main`; PR #8 `feat/p15-nomoredebate` �
 - [x] Портал: `/p/nomoredebate/...` грузит продукт через `registry.load()` (до MVP_READY — только с `ALGOHUB_FLAGS=preview:P15`).
 - [x] Playwright happy path (desktop + mobile, axe на каждом экране) против `compose.ci.yml` (образы api/web,
       Postgres 16, миграции) — зелёный в CI job `dod P15`.
-- [x] Интеграция с реальным Postgres зелёная (`just test-int` в CI `test-py` и внутри `just dod P15`).
+- [x] Интеграция с реальным Postgres зелёная: CI `test-py` (`uv run pytest -m integration` против service
+      container Postgres 16) и `just test-int` внутри `just dod P15`.
 - [x] `just dod P15` = GREEN в CI (run 43686028535, commit `37ceef1`, job `dod P15` 188 с; `just dod` выходит с 0
       только при GREEN — `tools/dod/src/main.ts`). Локально INCOMPLETE (11 ✅, 3 NOT RUN — нет Docker).
 
@@ -42,6 +43,9 @@ Branch: `feat/portal-catalog` (PR #7 → `main`; PR #8 `feat/p15-nomoredebate` �
 - 2026-11-13 после ревью: pytest 221 passed / 97 deselected (11.3 s), Vitest p15 56; `just e2e-preview P15` → 8 passed (7.9 s) — не засчитывается в DoD (in-memory, без образов и Postgres).
 - 2026-11-13 ручной прогон в браузере (preview): создание → 3 голоса → закрытие → «Победил вариант «Sushi»»,
   375 px без горизонтального скролла, 0 ошибок консоли.
+
+- DoD-пункт «`.env.example` актуален» `just dod` проверяет только по наличию файла (`checkEnvExample`), а не по
+  ключам `Settings`; сверено вручную 2026-11-15 — у P15 нет собственных env-переменных. Усиление — Фаза 2.5.
 
 ## Known bugs
 - none (известные пробелы платформы — в BUILD_STATE: 405 `Allow` у Starlette).

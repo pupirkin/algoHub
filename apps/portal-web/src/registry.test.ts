@@ -64,8 +64,8 @@ describe("registry", () => {
     expect(mod.matchRoute(["nope"])).toBeNull();
   });
 
-  it("a dod-gated status (MVP_READY, LIVE) needs a web package and the same status in STATUS.md", () => {
-    for (const p of products.filter((x) => x.status === "MVP_READY" || x.status === "LIVE")) {
+  it("a launched status (MVP_READY, VALIDATING, LIVE) needs a web package and the same status in STATUS.md", () => {
+    for (const p of products.filter(isLaunched)) {
       expect(p.load, p.id).toBeDefined();
       const statusMd = readFileSync(
         fileURLToPath(new URL(`../../../products/${p.id.toLowerCase()}-${p.slug}/docs/STATUS.md`, import.meta.url)),

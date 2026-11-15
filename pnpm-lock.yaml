@@ -493,9 +493,15 @@ importers:
       '@algohub/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@algohub/p15':
+        specifier: workspace:*
+        version: link:../../products/p15-nomoredebate/web
       '@types/node':
         specifier: 24.19.2
         version: 24.19.2
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
       tsx:
         specifier: 4.23.15
         version: 4.23.15
