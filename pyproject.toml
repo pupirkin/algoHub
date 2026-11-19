@@ -15,7 +15,7 @@ dev = [
     "pytest-cov==7.1.0",
     "hypothesis==6.170.15",
     "httpx2==2.16.0",
-    "ruff==0.17.4",
+    "ruff==0.17.5",
     "mypy==2.4.1",
     "import-linter==2.16",
     "pre-commit==4.7.0",
