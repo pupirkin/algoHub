@@ -5,7 +5,7 @@ description = "AlgoHub API composition root: mounts product routers under /api/v
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "algohub-shared-kernel",
-    "fastapi==0.162.5",
+    "fastapi==0.165.0",
     "uvicorn[standard]==0.54.0",
 ]
 
