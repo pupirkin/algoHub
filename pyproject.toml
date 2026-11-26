@@ -13,11 +13,11 @@ dependencies = [
 dev = [
     "pytest==9.2.0",
     "pytest-cov==7.1.0",
-    "hypothesis==6.170.15",
-    "httpx2==2.16.0",
-    "ruff==0.17.4",
+    "hypothesis==6.170.17",
+    "httpx2==2.16.2",
+    "ruff==0.17.6",
     "mypy==2.4.1",
-    "import-linter==2.16",
+    "import-linter==2.17",
     "pre-commit==4.7.0",
 ]
 
